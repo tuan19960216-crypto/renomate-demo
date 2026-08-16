@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>3D 白模 · 两室一厅 41.5㎡</title>
+<style>
+ body{margin:0;font-family:-apple-system,"PingFang SC",sans-serif;overflow:hidden;background:#f0ede8}
+ #hud{position:fixed;top:14px;left:14px;background:rgba(255,255,255,.92);border-radius:12px;padding:10px 16px;font-size:13px;box-shadow:0 2px 12px rgba(0,0,0,.08)}
+ #hud b{color:#b5542d}
+</style>
+</head>
+<body>
+<div id="hud"><b>3D 白模</b> · 两室一厅 41.5㎡ · 方案 v1<br>
+<span style="color:#8a857d;font-size:12px">拖拽旋转 · 滚轮缩放 · 右键平移 — Three.js 开源自建，不依赖酷家乐</span></div>
+<script type="importmap">{"imports":{"three":"https://unpkg.com/three@0.160.0/build/three.module.js","three/addons/":"https://unpkg.com/three@0.160.0/examples/jsm/"}}</script>
+<script type="module">
+import * as THREE from 'three';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+
+const scene=new THREE.Scene();scene.background=new THREE.Color(0xf0ede8);
+const cam=new THREE.PerspectiveCamera(55,innerWidth/innerHeight,.1,100);
+cam.position.set(7,8,10);
+const rd=new THREE.WebGLRenderer({antialias:true});rd.setSize(innerWidth,innerHeight);rd.shadowMap.enabled=true;document.body.appendChild(rd.domElement);
+const ctl=new OrbitControls(cam,rd.domElement);ctl.target.set(3.15,0,3.5);ctl.maxPolarAngle=Math.PI/2.05;
+
+scene.add(new THREE.AmbientLight(0xffffff,.75));
+const sun=new THREE.DirectionalLight(0xfff2e0,1.1);sun.position.set(4,10,12);sun.castShadow=true;scene.add(sun);
+
+// 单位:米。坐标系:x=东西(总宽6.3), z=南北(总深7.0, z小=北), y=高
+const WALL_H=2.8, T=.12;
+const matWall=new THREE.MeshStandardMaterial({color:0xffffff,roughness:.9});
+const matWallN=new THREE.MeshStandardMaterial({color:0xffffff,roughness:.9,transparent:true,opacity:.35}); // 南/东墙半透明便于观察
+const matFloor=new THREE.MeshStandardMaterial({color:0xd9c9b2,roughness:.85});
+const matWood=new THREE.MeshStandardMaterial({color:0xc9a887,roughness:.7});
+const matSoft=new THREE.MeshStandardMaterial({color:0xefe9df,roughness:.9});
+const matAcc=new THREE.MeshStandardMaterial({color:0xb5542d,roughness:.6});
+
+function box(w,h,d,x,y,z,mat){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);m.position.set(x,y,z);m.castShadow=m.receiveShadow=true;scene.add(m);return m}
+
+// 地板
+box(6.3,.1,7.0,3.15,-.05,3.5,matFloor);
+// 外墙(北/西不透明,南/东半透明)
+box(6.3,WALL_H,T,3.15,WALL_H/2,0,matWall);            // 北
+box(T,WALL_H,7.0,0,WALL_H/2,3.5,matWall);             // 西
+box(6.3,WALL_H,T,3.15,WALL_H/2,7.0,matWallN);         // 南
+box(T,WALL_H,7.0,6.3,WALL_H/2,3.5,matWallN);          // 东
+// 内墙
+box(6.3,WALL_H,T,3.15,WALL_H/2,1.88,matWall);         // 北排底墙(留门洞简化)
+box(T,WALL_H,1.88,1.40,WALL_H/2,0.94,matWall);        // 厨/卫
+box(T,WALL_H,1.88,2.92,WALL_H/2,0.94,matWall);        // 卫/次卧
+box(T,WALL_H,1.07,4.90,WALL_H/2,2.42,matWall);        // 入户区隔断
+box(3.22,WALL_H,T,4.69,WALL_H/2,2.95,matWall);        // 主卧顶墙
+box(T,WALL_H,3.23,3.08,WALL_H/2,4.57,matWall);        // 客厅/主卧
+box(3.08,1.1,T,1.54,0.55,5.89,matWall);               // 阳台半墙
+box(3.22,WALL_H,T,4.69,WALL_H/2,6.18,matWallN);       // 主卧底墙
+
+// ===== 家具(方案 v1) =====
+box(.28,2.4,1.0,6.02,1.2,2.42+0,matWood);             // 玄关薄柜
+box(1.5,.95,.4,0.81,.475,2.10,matWood);               // 餐边柜+冰箱
+const table=new THREE.Mesh(new THREE.CylinderGeometry(.45,.45,.05,32),matWood);table.position.set(2.05,.72,2.35);scene.add(table);
+box(.06,.72,.06,2.05,.36,2.35,matWood);               // 桌腿
+box(.9,.75,2.0,0.57,.375,4.0,matSoft);                // 沙发
+box(.3,.4,.6,0.57,.95,4.0,matAcc);                    // 沙发抱枕点缀
+box(.45,.45,1.7,2.72,.225,4.05,matWood);              // 电视柜
+box(.05,.7,1.2,3.05,1.3,4.05,new THREE.MeshStandardMaterial({color:0x333333}));// 电视
+box(1.5,.45,2.0,4.05,.225,4.30,matSoft);              // 主卧床
+box(2.4,2.4,.6,4.50,1.2,5.85,matWood);                // 主卧通顶衣柜
+box(2.0,.45,1.2,4.00,.225,0.66,matWood);              // 榻榻米
+box(1.2,.75,.55,5.60,.375,0.34,matWood);              // 书桌
+box(.8,.85,.8,0.50,.425,6.40,matSoft);                // 洗烘
+box(.4,.9,1.72,0.28,.45,0.94,matWood);                // 一字橱柜
+
+// 房间标签
+function label(txt,x,z){const c=document.createElement('canvas');c.width=256;c.height=64;const g=c.getContext('2d');
+ g.fillStyle='#55504a';g.font='bold 30px sans-serif';g.textAlign='center';g.fillText(txt,128,42);
+ const t=new THREE.CanvasTexture(c);const s=new THREE.Sprite(new THREE.SpriteMaterial({map:t,transparent:true}));
+ s.position.set(x,2.0,z);s.scale.set(1.6,.4,1);scene.add(s)}
+label('厨房',0.7,0.9);label('卫生间',2.15,0.9);label('次卧·榻榻米',4.6,0.9);
+label('客厅+餐区',1.55,3.6);label('主卧',4.7,4.5);label('阳台',1.5,6.5);label('入户',5.6,2.4);
+
+addEventListener('resize',()=>{cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix();rd.setSize(innerWidth,innerHeight)});
+(function loop(){requestAnimationFrame(loop);ctl.update();rd.render(scene,cam)})();
+</script>
+</body>
+</html>
