@@ -1,0 +1,1010 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>装修 AI 管家 · v0.2</title>
+<style>
+  :root{
+    --bg:#f7f5f1; --card:#fff; --ink:#2b2926; --sub:#8a857d;
+    --line:#eae6df; --brand:#b5542d; --brand-soft:#fbeee7;
+    --green:#3d8b62; --green-soft:#e8f3ed; --amber:#b07d1e; --amber-soft:#faf3e2;
+    --blue:#3568a8; --blue-soft:#e9f0f9; --red:#c04545; --red-soft:#fbecec;
+    --purple:#7a5aa8; --purple-soft:#f0ebf8;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--ink);font-size:14px;line-height:1.6}
+  .app{display:flex;min-height:100vh}
+  .side{width:212px;background:var(--card);border-right:1px solid var(--line);padding:20px 12px;flex-shrink:0;position:sticky;top:0;height:100vh;overflow-y:auto}
+  .logo{font-size:17px;font-weight:700;padding:4px 10px 6px}
+  .logo span{color:var(--brand)}
+  .ver{font-size:11px;color:var(--sub);padding:0 10px 8px}
+  .side .group{font-size:11px;color:var(--sub);padding:14px 10px 6px;letter-spacing:1px}
+  .nav{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:9px;cursor:pointer;color:#55504a;margin-bottom:2px}
+  .nav:hover{background:var(--bg)}
+  .nav.on{background:var(--brand-soft);color:var(--brand);font-weight:600}
+  .main{flex:1;padding:26px 32px;max-width:1120px}
+  .page{display:none}.page.on{display:block}
+  h1{font-size:20px;margin-bottom:4px}
+  .pagesub{color:var(--sub);margin-bottom:14px}
+  .boundary{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
+  .bd{font-size:12px;padding:3px 10px;border-radius:99px;border:1px solid var(--line);background:var(--card)}
+  .bd.ai b{color:var(--purple)}.bd.hu b{color:var(--brand)}.bd.sys b{color:var(--blue)}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:16px}
+  .card h3{font-size:15px;margin-bottom:12px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+  .grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+  .pill{display:inline-block;font-size:12px;padding:2px 10px;border-radius:99px;font-weight:600}
+  .btn{display:inline-block;background:var(--brand);color:#fff;border:none;border-radius:9px;padding:8px 18px;font-size:13px;cursor:pointer;font-family:inherit}
+  .btn.ghost{background:var(--card);color:var(--brand);border:1px solid var(--brand)}
+  .btn.sm{padding:4px 12px;font-size:12px}
+  .btn.gray{background:#efece7;color:#6b665f;border:none}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .bar{height:8px;background:var(--bg);border-radius:99px;overflow:hidden}
+  .bar i{display:block;height:100%;background:var(--brand);border-radius:99px}
+  .muted{color:var(--sub);font-size:12px}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th{text-align:left;color:var(--sub);font-weight:500;font-size:12px;padding:8px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+  td{padding:9px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+  .tag{font-size:11px;padding:1px 8px;border-radius:99px}
+  .hero{background:linear-gradient(135deg,#fdf6f1,#f6efe6);border:1px solid #f0e4d8;border-radius:16px;padding:24px;margin-bottom:16px}
+  .hero h2{font-size:18px;margin-bottom:2px}
+  .miles{display:flex;justify-content:space-between;margin-top:10px}
+  .mile{text-align:center;font-size:12px;color:var(--sub)}
+  .mile b{display:block;color:var(--ink)}
+  .mile.hit b{color:var(--brand)}
+  .check{display:flex;align-items:flex-start;gap:10px;padding:8px 6px;border-radius:8px;cursor:pointer}
+  .check:hover{background:var(--bg)}
+  .check .box{width:18px;height:18px;border:2px solid #cfc9c0;border-radius:5px;flex-shrink:0;margin-top:3px;display:flex;align-items:center;justify-content:center;font-size:12px;color:#fff}
+  .check.done .box{background:var(--green);border-color:var(--green)}
+  .check.done .txt{text-decoration:line-through;color:var(--sub)}
+  .hard{color:var(--red);font-weight:600}
+  select.status{font-size:12px;padding:4px 8px;border-radius:8px;border:1px solid var(--line);font-family:inherit;cursor:pointer;background:var(--card)}
+  input.cell{width:100%;border:1px solid transparent;background:transparent;font:inherit;font-size:13px;padding:2px 4px;border-radius:6px}
+  input.cell:hover{border-color:var(--line)}
+  input.cell:focus{outline:none;border-color:var(--brand);background:#fff}
+  .tabbar{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+  .tab{padding:6px 16px;border-radius:99px;border:1px solid var(--line);background:var(--card);cursor:pointer;font-size:13px}
+  .tab.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .opt{padding:10px 14px;border:1px solid var(--line);border-radius:10px;margin-bottom:8px;cursor:pointer;background:var(--card)}
+  .opt:hover{border-color:var(--brand)}
+  .opt.sel{border-color:var(--brand);background:var(--brand-soft)}
+  .phase{display:flex;gap:14px;margin-bottom:14px}
+  .phase .dot{width:30px;height:30px;border-radius:50%;background:var(--bg);border:2px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;font-weight:700;color:var(--sub)}
+  .phase.done .dot{background:var(--green);border-color:var(--green);color:#fff}
+  .phase.cur .dot{border-color:var(--brand);color:var(--brand)}
+  .phase .body{flex:1}
+  .thumbwrap{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px}
+  .thumb{width:110px;height:82px;border-radius:10px;object-fit:cover;border:1px solid var(--line);cursor:pointer;position:relative}
+  .thumb .del{position:absolute;top:-6px;right:-6px;width:18px;height:18px;border-radius:50%;background:var(--ink);color:#fff;font-size:11px;display:flex;align-items:center;justify-content:center;cursor:pointer}
+  .thumbbox{position:relative}
+  .upl{width:110px;height:82px;border:1.5px dashed #cfc9c0;border-radius:10px;display:flex;align-items:center;justify-content:center;color:var(--sub);font-size:12px;cursor:pointer;text-align:center}
+  .upl:hover{border-color:var(--brand);color:var(--brand)}
+  .modal-bg{position:fixed;inset:0;background:rgba(30,25,20,.4);display:none;align-items:center;justify-content:center;z-index:50}
+  .modal-bg.on{display:flex}
+  .modal{background:#fff;border-radius:16px;padding:24px;width:420px;max-width:92vw;max-height:88vh;overflow-y:auto}
+  .modal h3{margin-bottom:14px}
+  .frow{margin-bottom:12px}
+  .frow label{display:block;font-size:12px;color:var(--sub);margin-bottom:4px}
+  .frow input,.frow select,.frow textarea{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:9px;font:inherit;font-size:13px}
+  .kcard{border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:10px;background:var(--card)}
+  .kcard b{display:block;margin-bottom:4px}
+  .kcard .kc{font-size:13px;color:#55504a;white-space:pre-line}
+  .expense{display:flex;justify-content:space-between;align-items:center;padding:9px 4px;border-bottom:1px solid var(--line);font-size:13px}
+  .expense:last-child{border-bottom:none}
+  .toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 22px;border-radius:99px;font-size:13px;opacity:0;transition:.3s;pointer-events:none;z-index:99}
+  .toast.show{opacity:1}
+  .aibox{background:var(--purple-soft);border-radius:10px;padding:10px 14px;margin:8px 0;font-size:13px}
+  .warnbox{background:var(--amber-soft);border-radius:10px;padding:10px 14px;margin:8px 0;font-size:13px}
+  .searchbox{width:100%;padding:10px 14px;border:1px solid var(--line);border-radius:10px;font:inherit;font-size:13px;margin-bottom:12px}
+  @media(max-width:900px){.grid2,.grid3,.grid4{grid-template-columns:1fr}.main{padding:18px}.side{width:170px}}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="side">
+    <div class="logo">装修<span>AI</span>管家</div>
+    <div class="ver">v0.2 · 数据存在本机浏览器</div>
+    <div class="group">总览</div>
+    <div class="nav on" data-p="home">🏠 项目总览</div>
+    <div class="group">装修前 · 设计链路</div>
+    <div class="nav" data-p="know">📖 装修知识</div>
+    <div class="nav" data-p="need">📝 需求梳理</div>
+    <div class="nav" data-p="design">📐 量房与方案</div>
+    <div class="nav" data-p="render">🖼️ 效果图 / 3D</div>
+    <div class="nav" data-p="cd">📄 施工图</div>
+    <div class="nav" data-p="contract">📋 合同管理</div>
+    <div class="group">装修中 · 工作台</div>
+    <div class="nav" data-p="track">🧭 施工追踪</div>
+    <div class="nav" data-p="budget">💰 预算把控</div>
+    <div class="nav" data-p="buy">🛒 采购清单</div>
+    <div class="nav" data-p="mat">🧱 选材建议</div>
+    <div class="nav" data-p="accept">✅ 验收中心</div>
+    <div class="nav" data-p="photo">📷 现场图库</div>
+    <div style="padding:16px 10px"><button class="btn gray sm" onclick="resetAll()">重置演示数据</button></div>
+  </aside>
+
+  <main class="main">
+
+    <!-- 总览 -->
+    <section class="page on" id="p-home">
+      <div class="hero">
+        <h2>Hi，饭粒 👋 距离入住还有 <span style="color:var(--brand)" id="h-days">—</span> 天</h2>
+        <div class="muted" style="margin-bottom:16px"><span id="proj-meta">杭州 · 139m² · 三室两厅 · 半包模式</span> · <span class="pill" style="background:var(--brand-soft);color:var(--brand)" id="proj-stage">设计阶段</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px">
+          <span>预算 <span id="proj-budget">50.0</span> 万 · 已花费 <b id="hero-spent">0</b> 万</span><span class="muted"><span id="hero-state">未超支</span> · <span id="hero-pct">0</span>%</span>
+        </div>
+        <div class="bar"><i id="hero-bar" style="width:0%"></i></div>
+        <div class="miles" id="miles"></div>
+        <div class="muted" style="margin-top:6px">点任意里程碑可修改日期</div>
+      </div>
+      <div class="grid4" id="home-stats"></div>
+      <div class="card">
+        <h3>⚡ 今日提醒 <span class="pill" style="background:var(--purple-soft);color:var(--purple);font-size:11px">规则引擎生成 · AI 版待接 API</span></h3>
+        <div id="home-remind"></div>
+      </div>
+    </section>
+
+    <!-- 装修知识 -->
+    <section class="page" id="p-know">
+      <h1>装修知识</h1>
+      <div class="pagesub">内置知识库（可检索、按阶段筛选）。AI 对话版需接入 API 后开放 —— 当前内容本身已可直接使用</div>
+      <div class="boundary"><span class="bd sys"><b>代码</b>：关键词检索 · 阶段筛选</span><span class="bd ai"><b>AI(P1)</b>：结合项目上下文对话问答</span></div>
+      <div class="card">
+        <h3>💬 有问题直接问</h3>
+        <div style="display:flex;gap:10px">
+          <input class="searchbox" id="kq" style="margin:0" placeholder="如：贴完砖发现空鼓怎么办？" onkeydown="if(event.key==='Enter')askKnow()">
+          <button class="btn" onclick="askKnow()">提问</button>
+        </div>
+        <div id="kanswer"></div>
+        <div id="kqlist" style="margin-top:8px"></div>
+      </div>
+      <input class="searchbox" id="ksearch" placeholder="🔍 或直接搜知识库：防水 / 打压 / 增项 / 板材 / 付款 / 空鼓 …" oninput="renderKnow()">
+      <div class="tabbar" id="ktabs"></div>
+      <div id="klist"></div>
+      <div class="card" style="margin-top:14px"><h3>📚 内容来源与可靠性说明</h3>
+        <p style="font-size:13px;color:#55504a">条目由 AI 基于行业通行做法与国家标准整理，关键数字对应出处：闭水试验（GB50209 建筑地面工程质量验收规范）、水路打压（GB50242 建筑给水排水及采暖工程施工质量验收规范）、贴砖空鼓（GB50210 建筑装饰装修工程质量验收标准）、板材甲醛分级 ENF/E0/E1（GB/T 39600-2021）、室内甲醛限值 0.08mg/m³（GB/T 18883-2022）、保修最低 2 年/防渗漏 5 年（建设部令第 110 号《住宅室内装饰装修管理办法》）。<br><b>使用约定</b>：数字与地方规定冲突时以当地为准；MVP 对外发布前会对全部条目做一轮逐条复核。发现错漏请在上方「有问题直接问」里提出，我们据此修订。</p>
+      </div>
+    </section>
+
+    <!-- 需求梳理 -->
+    <section class="page" id="p-need">
+      <h1>需求梳理</h1>
+      <div class="pagesub">8 个维度对齐行业《设计任务书 / 业主需求意向表》标准 —— 答完自动生成需求文档，可下载发给多位设计师对比</div>
+      <div class="boundary"><span class="bd sys"><b>代码</b>:问卷 · 成文 · 下载</span><span class="bd ai"><b>AI(P1)</b>:追问矛盾点 · 润色</span><span class="bd hu"><b>人</b>:回答 · 确认</span></div>
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;margin-bottom:10px"><h3 style="margin:0">8 维度问卷 <span class="muted" id="needprog"></span></h3>
+        <button class="btn sm ghost" onclick="genNeedDoc()">生成需求文档</button></div>
+        <div class="bar" style="margin-bottom:16px"><i id="needbar" style="width:0%"></i></div>
+        <div id="needform"></div>
+      </div>
+      <div class="card" id="needdoc" style="display:none">
+        <h3>📄 《居住需求文档》</h3>
+        <div id="needdoc-body" style="font-size:13px;white-space:pre-line;background:var(--bg);border-radius:10px;padding:16px"></div>
+        <div style="margin-top:12px"><button class="btn sm" onclick="dlNeedDoc()">下载 .md 文件</button> <button class="btn sm ghost" onclick="copyNeedDoc()">复制全文</button></div>
+      </div>
+    </section>
+
+    <!-- 量房与方案 -->
+    <section class="page" id="p-design">
+      <h1>量房与方案</h1>
+      <div class="pagesub">对齐设计合同三阶段。上传户型图和现场照片后，AI 产出方案建议（当前版本：资料就绪后交给 AI 会话产出，P1 接 API 全自动）</div>
+      <div class="boundary"><span class="bd ai"><b>AI</b>:功能关系分析 · 平面布局建议 · 方案比对需求</span><span class="bd sys"><b>代码</b>:资料归档 · 确认锁定</span><span class="bd hu"><b>人</b>:签字确认</span></div>
+      <div class="card">
+        <h3>① 设计准备（量房资料）</h3>
+        <p class="muted">原始户型图（开发商图/物业存档图均可）+ 现场照片（每个房间 2-3 张 + 梁位 + 入户水电表位置）</p>
+        <div style="display:flex;gap:24px;flex-wrap:wrap;margin-top:8px">
+          <div><div class="muted" style="margin-bottom:4px">户型图</div><div class="thumbwrap" id="up-floor"></div></div>
+          <div><div class="muted" style="margin-bottom:4px">现场照片</div><div class="thumbwrap" id="up-site"></div></div>
+        </div>
+        <div class="warnbox">⚠️ <b class="hard">承重墙、配重墙（阳台垛子）、燃气管道不可拆改</b> —— 量房时让物业指认并拍照标注，这是全流程唯一不可逆的红线。</div>
+      </div>
+      <div class="card">
+        <h3>② 需求 ↔ 方案联动 <span class="muted">方案好不好，唯一标准是「回应了多少条需求」</span></h3>
+        <div id="needsummary"></div>
+        <div style="margin-top:10px">
+          <button class="btn ghost sm" onclick="togglePack()">👁 在此查看资料包</button>
+          <button class="btn ghost sm" onclick="exportAIPack()">📦 复制导出资料包</button>
+          <button class="btn sm gray" onclick="go('need')">去补需求 →</button>
+        </div>
+        <pre id="packview" style="display:none;margin-top:10px;background:var(--bg);border-radius:10px;padding:14px;font-size:12px;white-space:pre-wrap;font-family:inherit;max-height:340px;overflow-y:auto"></pre>
+      </div>
+      <div class="card">
+        <h3>③ 方案版本管理</h3>
+        <div class="grid2" style="margin-bottom:10px;gap:10px">
+          <div class="aibox" style="margin:0">🤖 <b>路线 A · AI 自助</b>：复制上方资料包（连同户型图）发给 Claude → 得到功能关系分析 + 平面布局建议 + 需求核对表 → 「＋ 新建版本」粘贴进来，随时改。</div>
+          <div class="warnbox" style="margin:0">🤝 <b>路线 B · 设计师协作</b>：把资料包发给设计师（比口头描述强 10 倍）→ 设计师出的方案要点、每轮修改记录贴成一个版本，图纸传到「效果图/施工图」页 → 用 AI 帮你审：哪几条需求没被回应。</div>
+        </div>
+        <div id="planlist"></div>
+        <button class="btn ghost sm" onclick="addPlan()">＋ 新建方案版本</button>
+      </div>
+      <div class="card">
+        <h3>④ 方案确认（合同约定产出物，齐了再签字）</h3>
+        <div id="plan-checks"></div>
+        <button class="btn" id="btn-confirm" onclick="confirmPlan()">✍️ 确认方案并签字（锁定）</button>
+        <div class="muted" style="margin-top:6px">确认后触发：设计费 60%（¥21,000）付款提醒 · 已确认方案再修改，重新设计部分费用另行协商（合同条款）· AI 出图边界：全套施工图必须由人类设计师出图签字，AI 负责审</div>
+      </div>
+    </section>
+
+    <!-- 效果图/3D -->
+    <section class="page" id="p-render">
+      <h1>效果图 / 3D</h1>
+      <div class="pagesub">调研结论：酷家乐 API 需企业资质审核（1-2 周）——当前版本用「跳转 + 归档」（无需资质、真实可用），API/iframe 集成列入 P1</div>
+      <div class="boundary"><span class="bd sys"><b>代码</b>:跳转 · 归档</span><span class="bd ai"><b>AI(P1)</b>:图生图换风格</span><span class="bd hu"><b>人</b>:确认效果(触发付款30%)</span></div>
+      <div class="card">
+        <h3>🔗 第三方 3D 工作区（真实可用）</h3>
+        <p class="muted" style="margin-bottom:10px">酷家乐个人版免费：上传户型图 → 自动生成 3D → 拖家具 → 渲染效果图/全景漫游。做完把成果链接粘回来归档。</p>
+        <a class="btn" href="https://www.kujiale.com" target="_blank">打开酷家乐 ↗</a>
+        <a class="btn ghost" href="https://www.justeasy.cn" target="_blank">备选：建E网 ↗</a>
+        <button class="btn ghost" onclick="addRenderLink()">归档 3D 漫游/效果图链接</button>
+        <div id="renderlinks" style="margin-top:10px"></div>
+      </div>
+      <div class="card">
+        <h3>🖼️ 效果图归档 <span class="muted">上传设计师给的图 / 酷家乐渲染图 · 确认后触发付款 30%</span></h3>
+        <div class="thumbwrap" id="up-render"></div>
+      </div>
+      <div class="card">
+        <h3>🤖 AI 生成/修改效果图 <span class="tag" style="background:#f1efec;color:#8a857d">P1 · 待接图像 API</span></h3>
+        <p class="muted">上传毛坯实拍 → 生成装修后效果 / 换风格重画。接入图像生成 API 后开放，此处不做假按钮。</p>
+      </div>
+    </section>
+
+    <!-- 施工图 -->
+    <section class="page" id="p-cd">
+      <h1>施工图</h1>
+      <div class="pagesub">全套装饰施工图齐套性检查 —— 付设计费尾款前逐张核对，缺一张后期就多一次扯皮</div>
+      <div class="boundary"><span class="bd ai"><b>AI(P1)</b>:齐套检查 · 提取主材表</span><span class="bd sys"><b>代码</b>:清单联动采购</span><span class="bd hu"><b>人</b>:确认交付(触发付款10%)</span></div>
+      <div class="card">
+        <h3>📄 全套图纸清单 <span class="muted" id="cdprog"></span></h3>
+        <div class="grid3" id="cdlist"></div>
+        <p class="muted" style="margin-top:8px">每收到一张就勾一张。<span class="hard">水电点位图、立面图、节点大样</span>最容易被漏——没有它们，工长只能「看着办」。</p>
+      </div>
+      <div class="card">
+        <h3>🤝 户主与 AI 怎么配合审图</h3>
+        <div style="font-size:13px;color:#55504a">
+          <p><b>你做的（5 分钟）</b>：① 设计师每交付一张图，拍照/截图传到上面对应卡片（自动打勾）② 全套齐后把图发给 Claude 会话。</p>
+          <p><b>AI 做的</b>：① 齐套检查——9 张缺哪张、每张该有的信息全不全（如天花图有没有标灯位高度）② 一致性交叉检查——水电点位 vs 家具布局（沙发旁有没有插座）、立面柜体 vs 平面尺寸 ③ 按需求文档核对——你要的 24 双鞋位在图上有没有落实 → 输出审图报告。</p>
+          <p><b>然后</b>：拿报告找设计师逐条确认修改，改完的图重新上传覆盖。<span class="hard">审图报告不能代替设计师签字的正式图纸</span>——它是你和设计师对话时的弹药。</p>
+        </div>
+      </div>
+      <div class="card">
+        <h3>主材表 → 采购清单</h3>
+        <p class="muted" style="margin-bottom:10px">拿到主材表后，「采购清单」页已内置 139㎡ 半包的标准清单模板（含数量估算、采购时机），直接在上面替换成你的实际选型即可。P1 接 API 后支持拍照主材表自动提取。</p>
+        <button class="btn ghost sm" onclick="go('buy')">去采购清单 →</button>
+      </div>
+    </section>
+
+    <!-- 合同管理 -->
+    <section class="page" id="p-contract">
+      <h1>合同管理</h1>
+      <div class="pagesub">付款节点绑定阶段确认。AI 审合同需接 API —— 下方审查结论来自对你上传的真实合同（装修合同 1-3）的人工核对样例</div>
+      <div class="boundary"><span class="bd ai"><b>AI(P1)</b>:字段提取 · 风险审查</span><span class="bd sys"><b>代码</b>:付款节点提醒 · 联动记账</span><span class="bd hu"><b>人</b>:签合同 · 付钱</span></div>
+      <div class="grid2">
+        <div class="card" style="margin:0">
+          <h3>📋 室内设计合同 <span class="tag" style="background:var(--green-soft);color:var(--green)">已签 8/8</span></h3>
+          <table>
+            <tr><td class="muted" style="width:64px">计费</td><td>使用面积 125㎡ × 280 元 = <b>¥35,000</b></td></tr>
+            <tr><td class="muted">节点 1</td><td>确认方案后 1 日内付 60% ¥21,000 <span class="tag" id="pay1" style="background:var(--amber-soft);color:var(--amber)">待触发</span> <button class="btn sm ghost" id="pay1btn" style="display:none" onclick="payNode(21000,'设计费60%')">记录已付款</button></td></tr>
+            <tr><td class="muted">节点 2</td><td>确认效果图后 1 日内付 30% ¥10,500</td></tr>
+            <tr><td class="muted">节点 3</td><td>施工图完成确认后付 10% ¥3,500</td></tr>
+          </table>
+        </div>
+        <div class="card" style="margin:0">
+          <h3>合同核对结论（样例）</h3>
+          <div style="font-size:13px">
+            <p>✅ 付款节点均绑定确认动作，无预付大头风险</p>
+            <p>✅ 已约定「设计师现场交底 + 指导 ≥ 3 次」</p>
+            <p>✅ 已约定不得擅自改变承重结构、全套图纸交付</p>
+            <p style="color:var(--red)">⚠️ 第六条违约金比例为空白（__%/天）—— 签字前应补填，行业常见 0.1%-0.5%/天</p>
+            <p style="color:var(--red)">⚠️ 效果图仅约定「1 个主要空间视角」—— 139㎡ 三居建议至少 3-4 个空间，补充协议加上</p>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <h3>📑 施工合同避坑核对单（签字前逐条对）</h3>
+        <div id="ctchecks"></div>
+      </div>
+    </section>
+
+    <!-- 施工追踪 -->
+    <section class="page" id="p-track">
+      <h1>施工追踪</h1>
+      <div class="pagesub">半包模式 · 7 个阶段 · <span class="hard">红字 = 验收硬指标 / 不可逆节点</span> · 勾选会自动保存</div>
+      <div class="boundary"><span class="bd sys"><b>代码</b>:进度计算 · 持久化</span><span class="bd ai"><b>AI(P1)</b>:按模式生成模板 · 节点前提醒</span><span class="bd hu"><b>人</b>:勾选 · 拍照</span></div>
+      <div class="card" id="tracklist"></div>
+    </section>
+
+    <!-- 预算把控 -->
+    <section class="page" id="p-budget">
+      <h1>预算把控</h1>
+      <div class="pagesub">记一笔真实可用（含图片凭证），类目达 90% 预警。小票 OCR 自动识别待接 AI API —— 当前请手动录入金额</div>
+      <div class="boundary"><span class="bd sys"><b>代码</b>:汇总 · 预警 · 持久化</span><span class="bd ai"><b>AI(P1)</b>:小票OCR · 超支归因</span><span class="bd hu"><b>人</b>:确认支出</span></div>
+      <div class="grid3">
+        <div class="card" style="margin:0"><div class="muted">总预算</div><div style="font-size:24px;font-weight:700" id="b-total">¥500,000</div></div>
+        <div class="card" style="margin:0"><div class="muted">已花费</div><div style="font-size:24px;font-weight:700;color:var(--brand)" id="b-spent">¥0</div></div>
+        <div class="card" style="margin:0"><div class="muted">剩余</div><div style="font-size:24px;font-weight:700;color:var(--green)" id="b-left">¥500,000</div></div>
+      </div>
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+          <h3 style="margin:0">类目预算 <span class="muted">点名称改名 · 点金额改上限 · ×删除</span></h3>
+          <span><button class="btn sm ghost" onclick="addCat()">＋ 新增类目</button> <button class="btn sm" onclick="openExpense()">＋ 记一笔</button></span>
+        </div>
+        <div id="cats"></div>
+      </div>
+      <div class="card">
+        <h3>支出流水 <span class="muted" id="expcount"></span></h3>
+        <div id="explist"></div>
+      </div>
+    </section>
+
+    <!-- 采购清单 -->
+    <section class="page" id="p-buy">
+      <h1>采购清单</h1>
+      <div class="pagesub">139㎡ 半包标准模板（可改可增删）。状态下拉直选；填「实付」自动记入对应预算类目；「时机」列告诉你最晚什么阶段必须定</div>
+      <div class="boundary"><span class="bd sys"><b>代码</b>:状态机 · 实付联动记账 · 持久化</span><span class="bd ai"><b>AI(P1)</b>:清单初稿 · 品牌建议</span><span class="bd hu"><b>人</b>:定型号 · 下单</span></div>
+      <div class="tabbar">
+        <div class="tab on" data-t="zc" onclick="buyTab(this)">主材</div>
+        <div class="tab" data-t="jd" onclick="buyTab(this)">家电</div>
+        <div class="tab" data-t="rz" onclick="buyTab(this)">软装家具</div>
+      </div>
+      <div class="card" style="overflow-x:auto">
+        <table id="buytable"></table>
+        <button class="btn sm ghost" style="margin-top:10px" onclick="addBuyItem()">＋ 添加采购项</button>
+      </div>
+    </section>
+
+    <!-- 选材建议 -->
+    <section class="page" id="p-mat">
+      <h1>选材建议</h1>
+      <div class="pagesub">每个品类：关键结论 + 避坑要点 + 预算参考（139㎡ 口径）。内容为行业通行标准，具体品牌价格以当地实际为准</div>
+      <div class="boundary"><span class="bd sys"><b>代码</b>:决策树</span><span class="bd ai"><b>AI(P1)</b>:个性化结论</span><span class="bd hu"><b>人</b>:选择</span></div>
+      <div class="tabbar" id="mattabs"></div>
+      <div id="matbody"></div>
+    </section>
+
+    <!-- 验收中心 -->
+    <section class="page" id="p-accept">
+      <h1>验收中心</h1>
+      <div class="pagesub">六个节点，每节点硬指标可逐条勾选 + 拍照存档。<span class="hard">水电、防水是唯二封起来就看不见的工程</span>，必须当场验</div>
+      <div class="boundary"><span class="bd sys"><b>代码</b>:清单 · 存档</span><span class="bd ai"><b>AI(P2)</b>:照片初判</span><span class="bd hu"><b>人</b>:现场拍板</span></div>
+      <div id="acceptlist"></div>
+    </section>
+
+    <!-- 现场图库 -->
+    <section class="page" id="p-photo">
+      <h1>现场图库 / 流程记要</h1>
+      <div class="pagesub">拍照 + 记一句话，按日期归档。这些照片就是将来维权/维修的证据链</div>
+      <div class="boundary"><span class="bd sys"><b>代码</b>:时间线存储</span><span class="bd ai"><b>AI(P1)</b>:周报生成</span><span class="bd hu"><b>人</b>:拍照 · 记录</span></div>
+      <div class="card">
+        <div style="display:flex;gap:10px;margin-bottom:10px">
+          <input class="searchbox" id="pnote" style="margin:0" placeholder="记一句：如「与工长确认 8/28 进场」">
+          <button class="btn" onclick="addLog()">记录</button>
+        </div>
+        <div class="thumbwrap"><div class="upl" onclick="pickImg(b64=>{S.photos.unshift({d:today(),note:'',imgs:[b64]});save();renderPhotos()})">＋ 传照片</div></div>
+      </div>
+      <div id="photolist"></div>
+    </section>
+
+  </main>
+</div>
+
+<!-- 记一笔弹窗 -->
+<div class="modal-bg" id="expmodal">
+  <div class="modal">
+    <h3>记一笔</h3>
+    <div class="frow"><label>金额（元）*</label><input type="number" id="e-amt" placeholder="如 5440"></div>
+    <div class="frow"><label>类目</label><select id="e-cat"></select></div>
+    <div class="frow"><label>备注</label><input id="e-note" placeholder="如 地砖尾款 · 冠珠"></div>
+    <div class="frow"><label>日期</label><input type="date" id="e-date"></div>
+    <div class="frow"><label>凭证图片（小票/转账截图，存在本机）</label>
+      <div class="thumbwrap" id="e-imgs"></div>
+      <button class="btn sm gray" style="margin-top:6px" onclick="pickImg(b64=>{expImgs.push(b64);renderExpImgs()})">＋ 添加图片</button>
+      <button class="btn sm gray" style="margin-top:6px" disabled title="接入 AI API 后开放">🔍 OCR 识别小票（P1 待接 API）</button>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px">
+      <button class="btn gray" onclick="closeExpense()">取消</button>
+      <button class="btn" onclick="saveExpense()">保存</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<div class="modal-bg" id="lightbox" onclick="this.classList.remove('on')" style="cursor:zoom-out">
+  <img style="max-width:92vw;max-height:90vh;border-radius:12px">
+</div>
+<input type="file" id="filepick" accept="image/*" style="display:none">
+
+<script>
+/* ================= 状态与持久化 ================= */
+const LS='renomate_v03';
+const STATUS=['待定','已选型','已下单','已到货','已安装','已验收'];
+const STCOLOR=['#8a857d','#b07d1e','#3568a8','#7a5aa8','#3d8b62','#1f6b43'];
+const DEFAULT={
+ planConfirmed:false, pay1done:false,
+ project:{name:'杭州 · 139m² · 三室两厅 · 半包模式',budget:500000,stage:'设计阶段'},
+ milestones:[{k:'design',n:'启动设计',d:'2026-08-05'},{k:'plan',n:'方案确认',d:''},{k:'start',n:'开工',d:'2026-08-28'},{k:'finish',n:'竣工',d:'2026-11-08'},{k:'movein',n:'入住目标',d:'2026-12-18'}],
+ questions:[], plans:[],
+ planChecks:[
+  {t:'空间相互功能关系分析（动静分区 / 干湿分区 / 动线气泡图）',done:false},
+  {t:'平面设计（平面布置图，标尺寸）',done:false},
+  {t:'功能单元位置、功能单元关系及家具安排布局',done:false},
+  {t:'主要空间视角效果图（合同约定张数，建议 ≥3 个空间）',done:false}],
+ cd:[{t:'原始结构图',d:false},{t:'拆砌墙图',d:false},{t:'平面布置图',d:false},{t:'天花布置图（标灯位/高度）',d:false},{t:'地面铺装图',d:false},{t:'水电点位图（强弱电/给排水）',d:false},{t:'立面图（全屋含定制柜）',d:false},{t:'节点大样图',d:false},{t:'主材表',d:false}],
+ ct:[
+  {t:'工艺做法写死：如「墙面=铲除原腻子+固化剂+石膏找平+耐水腻子2遍+乳胶漆1底2面」，不接受「墙面处理」四个字',d:false},
+  {t:'主辅材品牌+型号+规格写进合同附件，写「同等品牌」的全部拉出来问清',d:false},
+  {t:'水电按「实测实量」结算的，约定单价与预估量，超预估 10% 部分需业主签字确认',d:false},
+  {t:'增项规则：开工后单项增项超合同价 5% 需书面报价并签字，口头增项一律不认',d:false},
+  {t:'付款节奏：开工 ≤30% → 水电验收后 30% → 泥木验收后 30% → 竣工验收后付尾款，尾款 ≥5%',d:false},
+  {t:'工期与延期违约金（__元/天）填了数字，且约定材料进场延误的责任归属',d:false},
+  {t:'保修条款：水电隐蔽工程 ≥5 年，其余 ≥2 年（住建部《住宅室内装饰装修管理办法》最低标准）',d:false}],
+ tasks:[
+  {name:'阶段一 · 准备阶段',items:[
+   {t:'系统学一遍装修流程与预算分配（本站「装修知识」1 小时速通）'},
+   {t:'完成 8 维度需求梳理，生成需求文档'},
+   {t:'确定装修模式（半包/全包/清包）与总预算，预留 10-15% 预备金'},
+   {t:'找 3 家（设计师/装修公司）分别量房出方案报价，横向对比'},
+   {t:'核对报价单：工艺、品牌型号、数量三要素齐全才可比价',hard:1},
+   {t:'签设计合同：付款绑定确认节点，违约金比例填数字',hard:1}]},
+  {name:'阶段二 · 开工准备',items:[
+   {t:'物业办装修许可证、交押金，问清垃圾清运/电梯保护/施工时间规定'},
+   {t:'与装修公司签正式施工合同（用「合同管理」页核对单过一遍）',hard:1},
+   {t:'拍毛坯房全貌照片/视频存档（每面墙、天花、地面）'},
+   {t:'记录水电表原始数值，拍照'},
+   {t:'建工地群（业主+设计师+工长），设计师现场交底（合同约定≥3次之一）'},
+   {t:'订橱柜、定制柜、室内门：交货周期 30-45 天最长，开工前必须定',hard:1}]},
+  {name:'阶段三 · 拆除 + 水电',items:[
+   {t:'按拆砌墙图拆除，垃圾清运，拆完拍照'},
+   {t:'新砌墙体：植筋 + 挂网，与旧墙交接处防开裂处理'},
+   {t:'水电交底：全屋点位现场放线，业主到场逐个确认开关插座位置',hard:1},
+   {t:'水路：冷热水分色走管，左热右冷，间距≥150mm'},
+   {t:'水路打压测试 0.6-0.8MPa 保压 30 分钟，掉压 ≤0.05MPa 合格',hard:1},
+   {t:'电路：强弱电分管，交叉处包锡纸，间距≥150mm；空调/热水器/厨房独立回路'},
+   {t:'水电封槽前 360° 拍照录像存档（必须！之后打钉打孔全靠它）',hard:1},
+   {t:'此阶段应定：瓷砖、卫浴洁具、烟机灶具（泥工前到场）'}]},
+  {name:'阶段四 · 防水 + 泥工',items:[
+   {t:'卫生间防水：地面满涂 + 墙面 30cm，淋浴区 1.8m，刷 2-3 遍十字交叉'},
+   {t:'闭水试验：蓄水 2-3cm 静置 24-48h，自家看边角 + 下楼看天花板',hard:1},
+   {t:'贴砖：墙砖压地砖，卫生间地面坡度朝地漏 2-3‰'},
+   {t:'贴砖验收：空鼓率<5%（响鼓锤逐片敲），砖缝均匀，阴阳角方正',hard:1},
+   {t:'门槛石 + 挡水条安装（先于门套）'},
+   {t:'此阶段应定：木门复尺、灯具开关面板、集成吊顶'}]},
+  {name:'阶段五 · 木工 + 油漆',items:[
+   {t:'吊顶：轻钢龙骨间距≤300mm，石膏板留缝 5-8mm、螺钉防锈处理'},
+   {t:'墙面找平 + 耐水腻子 2-3 遍，阴阳角冲筋找直'},
+   {t:'乳胶漆 1 底 2 面，两遍间隔≥4h；灯光斜照检查平整度',hard:1},
+   {t:'此阶段应做：定制柜二次复尺，订窗帘、软装'}]},
+  {name:'阶段六 · 安装阶段（顺序：先上后下、先脏后净）',items:[
+   {t:'集成吊顶（厨卫铝扣板）→ 橱柜台面 → 木门 → 地板'},
+   {t:'定制柜进场安装，现场检查板材封边、五金品牌与合同一致',hard:1},
+   {t:'开关插座、灯具、卫浴洁具、花洒龙头安装'},
+   {t:'地板铺前地面找平度复检（2m 靠尺 ≤3mm）'}]},
+  {name:'阶段七 · 竣工 + 除醛入住',items:[
+   {t:'竣工总验收：对照施工图逐项点验，设计师到场（合同约定）',hard:1},
+   {t:'开荒保洁 → 家具家电进场'},
+   {t:'通风散味 1-3 个月；入住前做 CMA 资质甲醛检测（封闭 12h 采样）',hard:1},
+   {t:'留存全部合同/图纸/水电照片/保修卡，建立「家的档案」'}]}
+ ],
+ taskDone:{},
+ cats:[
+  {n:'硬装施工（半包人工+辅料）',limit:150000},
+  {n:'主材（自购）',limit:125000},
+  {n:'定制家具',limit:75000},
+  {n:'家电',limit:50000},
+  {n:'软装家具',limit:45000},
+  {n:'预备金（能不花就不花）',limit:55000}],
+ expenses:[],
+ buy:{
+  zc:[
+   {n:'地砖 800×800',z:'客餐厅+卧室 约83㎡(+8%损耗)',b:'6000-9000',a:'',m:'',r:'冠珠/东鹏/顺辉',h:'泥工进场前 2 周到场',s:0},
+   {n:'墙砖+小地砖',z:'厨卫阳台 墙约60㎡ 地约11㎡',b:'5000-7000',a:'',m:'',r:'可与地砖同厂谈打包价',h:'同上',s:0},
+   {n:'门槛石/窗台石',z:'5 门槛+3 窗台',b:'1500-2500',a:'',m:'',r:'天然石避免浅色（渗色）',h:'贴砖阶段',s:0},
+   {n:'橱柜（含台面五金）',z:'厨房 约4.5 延米',b:'12000-20000',a:'',m:'',r:'柜体多层实木/欧松板，台面石英石≥15mm',h:'⚡开工前定（交期最长）',s:0},
+   {n:'全屋定制柜',z:'衣柜+玄关+阳台 约33㎡投影',b:'40000-65000',a:'',m:'',r:'板材≥E0，报价按投影面积含五金',h:'⚡开工前定+水电前出图',s:0},
+   {n:'室内门（6樘）',z:'3卧室门+2卫生间门+厨房移门',b:'8000-14000',a:'',m:'',r:'实木复合门 1200-2000/樘',h:'⚡开工前定，泥工后复尺',s:0},
+   {n:'卫浴洁具',z:'马桶×2 花洒×2 浴室柜×2',b:'8000-15000',a:'',m:'',r:'箭牌/九牧/恒洁，马桶看釉面和冲力',h:'水电前定（排污位/花洒高度）',s:0},
+   {n:'龙头角阀地漏',z:'全屋',b:'1500-3000',a:'',m:'',r:'铜体，地漏深水封≥50mm',h:'水电阶段',s:0},
+   {n:'木地板',z:'卧室 约42㎡',b:'6000-12000',a:'',m:'',r:'多层实木 120-250/㎡',h:'安装阶段前 2 周',s:0},
+   {n:'乳胶漆+腻子',z:'全屋墙顶面 约300㎡',b:'4000-8000',a:'',m:'',r:'立邦/多乐士/都芳，认准十环认证',h:'油漆阶段前',s:0},
+   {n:'开关插座面板',z:'全屋约 60-80 位',b:'1500-3000',a:'',m:'',r:'公牛/施耐德/西门子',h:'安装阶段前',s:0},
+   {n:'灯具',z:'全屋主灯+筒射灯+灯带',b:'3000-8000',a:'',m:'',r:'色温统一 3000-4000K，显指≥90',h:'木工吊顶前定筒灯开孔尺寸',s:0},
+   {n:'集成吊顶',z:'厨卫阳台 约15㎡',b:'2500-5000',a:'',m:'',r:'铝扣板+浴霸，含辅料安装',h:'安装阶段',s:0},
+   {n:'美缝',z:'全屋瓷砖缝',b:'1500-3000',a:'',m:'',r:'环氧彩砂优于普通美缝剂',h:'贴砖完成后、装柜前',s:0},
+   {n:'窗户封窗（如需）',z:'阳台断桥铝',b:'8000-15000',a:'',m:'',r:'型材壁厚≥1.4mm，五金看好博/HOPO',h:'⚡开工即定（测量+生产20天）',s:0}],
+  jd:[
+   {n:'客厅空调（风管机/柜机）',z:'3-4匹 横厅35㎡',b:'7000-11000',a:'',m:'',r:'格力/美的/海尔一级能效',h:'💧吊顶内电源+排水，水电前定',s:0},
+   {n:'卧室挂机 ×3',z:'1.5匹变频',b:'7500-10500',a:'',m:'',r:'大金/格力/美的',h:'💧空调孔位置+16A插座',s:0},
+   {n:'冰箱',z:'400-550L 对开/十字',b:'4000-8000',a:'',m:'',r:'容声/海尔/西门子，量好嵌入位',h:'💧插座勿被冰箱挡住',s:0},
+   {n:'洗烘套装/洗烘一体',z:'阳台或卫生间',b:'5000-10000',a:'',m:'',r:'小天鹅/海尔',h:'💧进水+排水+插座提前定位',s:0},
+   {n:'烟机灶具',z:'厨房',b:'3000-7000',a:'',m:'',r:'方太/老板/华帝，中式爆炒选大吸力',h:'橱柜设计前定型号（开孔尺寸）',s:0},
+   {n:'热水器',z:'燃气 16L 或电热',b:'2000-5000',a:'',m:'',r:'能率/林内/史密斯',h:'💧燃气管+强排烟道位置',s:0},
+   {n:'洗碗机',z:'13-16 套嵌入式',b:'4000-8000',a:'',m:'',r:'西门子/美的，嵌入需橱柜预留',h:'橱柜设计前定型号',s:0},
+   {n:'净水器',z:'厨下 RO',b:'2000-4000',a:'',m:'',r:'安装位在橱柜水盆柜',h:'💧水盆柜预留电源',s:0},
+   {n:'智能马桶（如换）',z:'主卫',b:'2500-6000',a:'',m:'',r:'需马桶旁预留插座',h:'💧水电阶段预留',s:0},
+   {n:'新风/空气净化（可选）',z:'按需',b:'3000-12000',a:'',m:'',r:'装修中装管道式，装修后只能柜式',h:'吊顶前决定',s:0},
+   {n:'电视+投影',z:'客厅',b:'4000-12000',a:'',m:'',r:'预埋 HDMI 管线',h:'💧水电阶段预埋线管',s:0},
+   {n:'扫地机器人',z:'全屋',b:'2000-4500',a:'',m:'',r:'石头/追觅，基站要下水更省心',h:'💧预留低位插座+上下水（可选）',s:0},
+   {n:'厨房小电位',z:'蒸烤箱/微波炉等',b:'3000-8000',a:'',m:'',r:'高柜嵌入注意散热',h:'橱柜设计时留位+插座',s:0}],
+  rz:[
+   {n:'沙发',z:'客厅 3.2-3.6m 墙',b:'6000-15000',a:'',m:'',r:'进场前 1 个月定，量好电梯/楼道尺寸',h:'竣工前 1 个月',s:0},
+   {n:'餐桌椅',z:'1.4-1.6m',b:'3000-8000',a:'',m:'',r:'岩板/实木',h:'竣工前 1 个月',s:0},
+   {n:'床 ×3 + 床垫 ×3',z:'主卧1.8 次卧1.5×2',b:'12000-24000',a:'',m:'',r:'床垫躺够 15 分钟再买；儿童房关注环保',h:'竣工前 1 个月',s:0},
+   {n:'窗帘',z:'全屋 4-5 窗',b:'3000-6000',a:'',m:'',r:'按米计价的辅料是重灾区，问清总价',h:'油漆阶段定（轨道预埋/窗帘盒）',s:0},
+   {n:'餐边柜/斗柜等成品',z:'按需',b:'3000-8000',a:'',m:'',r:'与定制柜风格统一',h:'竣工后',s:0}]
+ },
+ accept:[
+  {name:'💧 水电验收（封槽前，最重要）',items:[
+   {t:'水路打压 0.6-0.8MPa 保压 30min，掉压≤0.05MPa'},{t:'冷热水管左热右冷、间距≥150mm，热水管保温'},
+   {t:'强弱电分管、间距≥150mm，交叉处屏蔽处理'},{t:'空调/热水器/厨房为独立回路，线径达标(照明1.5² 插座2.5² 空调4²)'},
+   {t:'所有插座相位仪测试：火零地接线正确'},{t:'360°拍照录像存档后才允许封槽'}]},
+  {name:'🛡️ 防水验收',items:[
+   {t:'涂刷高度：地面满涂+墙面30cm，淋浴区1.8m'},{t:'闭水试验 2-3cm 水位 24-48h'},{t:'到楼下邻居家看天花板无渗漏'},{t:'管根、阴角、地漏周边加强处理'}]},
+  {name:'🧱 泥工验收',items:[
+   {t:'空鼓率<5%，单砖空鼓面积<15%（响鼓锤逐片敲）'},{t:'卫生间地面坡度朝地漏，倒水试验不积水'},{t:'砖缝均匀（留缝1.5-2mm），阴阳角方正'},{t:'门槛石下方挡水墩/防水完好'}]},
+  {name:'🪚 木工验收',items:[
+   {t:'吊顶龙骨间距≤300mm，固定牢固无晃动'},{t:'石膏板接缝留缝并做防裂处理，螺钉点防锈'},{t:'窗帘盒/检修口位置正确'}]},
+  {name:'🎨 油漆验收',items:[
+   {t:'灯光斜照无明显砂眼、流坠、刷痕'},{t:'阴阳角顺直，2m 靠尺平整度≤3mm'},{t:'成品保护到位（门窗、地面无污染）'}]},
+  {name:'🏁 竣工验收',items:[
+   {t:'对照施工图逐项点验，设计师到场'},{t:'门窗开合顺畅、五金无松动'},{t:'全屋插座通电测试、灯具全开测试'},{t:'下水通畅：各盆放水+马桶冲水测试'},{t:'定制柜：封边、门缝均匀、五金与合同一致'}]}
+ ],
+ acceptDone:{},
+ uploads:{floor:[],site:[],render:[]},
+ renderLinks:[],
+ photos:[],
+ need:{}
+};
+let S=load();
+function load(){
+ // 旧数据自动迁移:顶层缺失的新字段用 DEFAULT 补齐,升级不再丢数据/断渲染
+ try{const s=localStorage.getItem(LS);
+  if(s){const o=JSON.parse(s),d=JSON.parse(JSON.stringify(DEFAULT));
+   for(const k in d)if(o[k]===undefined)o[k]=d[k];
+   return o}}catch(e){}
+ return JSON.parse(JSON.stringify(DEFAULT))}
+function save(){try{localStorage.setItem(LS,JSON.stringify(S))}catch(e){toast('⚠️ 存储失败：图片过多超出浏览器 5MB 限制，请删除部分图片')}}
+function resetAll(){if(confirm('清空所有本机数据，恢复初始演示状态？'))
+{localStorage.removeItem(LS);location.reload()}}
+function today(){const d=new Date();return d.getFullYear()+'/'+(d.getMonth()+1)+'/'+d.getDate()}
+function todayISO(){return new Date().toISOString().slice(0,10)}
+
+/* ================= 导航 / 通用 ================= */
+document.querySelectorAll('.nav').forEach(n=>n.onclick=()=>go(n.dataset.p));
+function go(p){document.querySelectorAll('.nav').forEach(x=>x.classList.toggle('on',x.dataset.p===p));
+document.querySelectorAll('.page').forEach(x=>x.classList.toggle('on',x.id==='p-'+p));window.scrollTo(0,0)}
+let tt;function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('show'),2600)}
+function pickImg(cb){const f=document.getElementById('filepick');f.onchange=()=>{const file=f.files[0];if(!file)return;
+ const r=new FileReader();r.onload=e=>{ // 压缩到最长边 900px 再存,避免撑爆 localStorage
+  const img=new Image();img.onload=()=>{const c=document.createElement('canvas');const k=Math.min(1,900/Math.max(img.width,img.height));
+  c.width=img.width*k;c.height=img.height*k;c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+  cb(c.toDataURL('image/jpeg',.72))};img.src=e.target.result};r.readAsDataURL(file);f.value=''};f.click()}
+function esc(s){return (s||'').replace(/</g,'&lt;')}
+
+/* ================= 首页 ================= */
+function renderHome(){
+ const P=S.project||DEFAULT.project;
+ document.getElementById('proj-meta').textContent=P.name;
+ document.getElementById('proj-stage').textContent=P.stage;
+ document.getElementById('proj-budget').textContent=(P.budget/1e4).toFixed(1);
+ const spent=S.expenses.reduce((a,e)=>a+e.amt,0);
+ const mv=S.milestones.find(m=>m.k==='movein');
+ const days=mv&&mv.d?Math.ceil((new Date(mv.d)-new Date())/864e5):'—';
+ document.getElementById('h-days').textContent=days;
+ // 里程碑(可编辑日期)
+ if(S.planConfirmed){const p=S.milestones.find(m=>m.k==='plan');if(p&&!p.d)p.d=new Date().toISOString().slice(0,10)}
+ document.getElementById('miles').innerHTML=S.milestones.map((m,i)=>{
+  const passed=m.d&&new Date(m.d)<=new Date();
+  return `<div class="mile ${passed?'hit':''}" style="cursor:pointer;position:relative" onclick="openMile(${i})"><b>${m.n}</b>${m.d?m.d.slice(5).replace('-','/')+(passed?' ✓':''):'待定'}<input type="date" id="mi-${i}" value="${m.d}" style="position:absolute;left:0;bottom:0;width:100%;height:1px;opacity:0;border:0;padding:0" onchange="S.milestones[${i}].d=this.value;save();renderHome()"></div>`}).join('');
+ document.getElementById('hero-spent').textContent=(spent/1e4).toFixed(2);
+ document.getElementById('hero-pct').textContent=(spent/P.budget*100).toFixed(1);
+ document.getElementById('hero-bar').style.width=Math.min(100,spent/P.budget*100)+'%';
+ document.getElementById('hero-state').textContent=spent>P.budget?'⚠️ 已超支':'未超支';
+ const allTasks=S.tasks.flatMap((st,i)=>st.items.map((it,j)=>S.taskDone[i+'-'+j]));
+ const doneT=allTasks.filter(Boolean).length;
+ const buyAll=[...S.buy.zc,...S.buy.jd,...S.buy.rz];
+ const ordered=buyAll.filter(x=>x.s>=2).length;
+ document.getElementById('home-stats').innerHTML=[
+  ['施工任务',doneT+'<span class="muted">/'+allTasks.length+'</span>','已勾选完成'],
+  ['采购进度',ordered+'<span class="muted">/'+buyAll.length+' 项</span>','已下单及之后'],
+  ['已花费','¥'+spent.toLocaleString(),'共 '+S.expenses.length+' 笔'],
+  ['下个付款节点',S.planConfirmed?(S.pay1done?'30%':'60%'):'60%',S.planConfirmed?(S.pay1done?'确认效果图后':'方案已确认，1日内'):'方案确认后触发']
+ ].map(x=>`<div class="card" style="margin:0"><div class="muted">${x[0]}</div><div style="font-size:22px;font-weight:700">${x[1]}</div><div class="muted">${x[2]}</div></div>`).join('');
+ // 规则引擎提醒(确定性规则,非假 AI)
+ const rem=[];
+ const cabinet=S.buy.zc.find(x=>x.n.includes('橱柜'));
+ if(cabinet&&cabinet.s<2)rem.push('<b class="hard">橱柜/定制柜/封窗交期最长（30-45天）</b>，距 8/28 开工不足 2 周，本周必须定 → <a href="#" onclick="go(\'buy\');return false" style="color:var(--brand)">采购清单</a>');
+ if(!S.planConfirmed)rem.push('方案尚未签字确认。确认前用「量房与方案」页比对需求文档，锁定后修改要另付费 → <a href="#" onclick="go(\'design\');return false" style="color:var(--brand)">去核对</a>');
+ if(S.planConfirmed&&!S.pay1done)rem.push('合同约定「确认方案后 1 日内支付 60%（¥21,000）」→ <a href="#" onclick="go(\'contract\');return false" style="color:var(--brand)">合同管理</a>');
+ S.cats.forEach(c=>{const cs=S.expenses.filter(e=>e.cat===c.n).reduce((a,e)=>a+e.amt,0);
+  if(cs>=c.limit*.9)rem.push(`<span class="hard">「${c.n}」已用 ${(cs/c.limit*100).toFixed(0)}%</span>，接近超支 → <a href="#" onclick="go('budget');return false" style="color:var(--brand)">预算把控</a>`)});
+ if(!rem.length)rem.push('暂无风险提醒，按节奏推进即可 💪');
+ document.getElementById('home-remind').innerHTML=rem.map(r=>`<div class="check"><div class="box"></div><div class="txt">${r}</div></div>`).join('');
+}
+
+function openMile(i){
+ const el=document.getElementById('mi-'+i);
+ try{el.showPicker()}catch(e){el.focus();el.click()}
+}
+
+/* ================= 知识库(真实内容) ================= */
+const KNOW=[
+ {c:'准备阶段',t:'预算怎么分才不超支（半包口径）',b:'总预算=硬装施工30% + 主材25% + 定制家具15% + 家电10% + 软装9% + 预备金10-15%。\n口诀：先定总数再分项，任何单项想加钱，必须从别的项里扣。90%的超支来自「这个也想要」而不是涨价。\n50万×139㎡ ≈ 3600元/㎡，属于充裕预算，重点防「充裕就乱花」。'},
+ {c:'准备阶段',t:'半包/全包/清包 10 秒分清',b:'清包：只买人工，所有材料自己跑——省钱30%但要脱层皮，上班族别选。\n半包：装修公司出人工+辅料（水泥沙子腻子电线），主材（砖/地板/门/柜/洁具）自己买——性价比与可控性的平衡点，最主流。\n全包：全给装修公司——省心，但主材利润空间大，合同必须写死品牌型号，否则「同等品牌」都是坑。'},
+ {c:'准备阶段',t:'怎么对比 3 家报价单（老师傅方法）',b:'报价单三要素缺一不可比：①工艺做法（墙面处理≠铲墙+固化+找平+耐水腻子2遍+1底2面）②品牌型号规格（电线是熊猫BV2.5²还是杂牌）③工程量（水电按米最容易虚报，问清预估量和超量结算规则）。\n低价签约的钱，一定会从增项里加回来——总价低 15% 以上的那家，重点查漏项。'},
+ {c:'准备阶段',t:'设计费值不值得花',b:'装修公司设计师（80-300元/㎡，常含在工程款里）本质偏销售，方案围绕签单；独立设计师（200-800元/㎡）为方案负责。\n判断标准：139㎡ 动线/收纳复杂度中等偏上，若预算充裕且在意居住质量，独立设计师+半包施工是效果/价格平衡最好的组合。\n无论请谁：付款必须绑「方案确认/效果图确认/施工图交付」节点，本站合同页有核对单。'},
+ {c:'设计阶段',t:'看平面图先看这 4 条线',b:'①动线：进门→放包→洗手；买菜→冰箱→水槽→灶台（黄金三角≤6步）；晾衣→阳台。交叉越少越好。\n②光线：主活动区白天是否有直射光，暗厅考虑玻璃隔断借光。\n③收纳线：进门鞋帽、餐边柜、全屋储物间，收纳面积≥地面面积12%。\n④插座线：沙发两侧、床头两侧、马桶旁、餐桌下（火锅位）——图上没有的，现场一定忘。'},
+ {c:'设计阶段',t:'效果图和落地不一样怎么防',b:'效果图三大美颜：广角镜头显大、无主灯全开亮度、软装是模型库里的贵货。\n防法：①要求效果图标注主要材质的具体型号（地砖/木饰面/漆色号）②大宗材料先拿小样在自家自然光下看③预算里软装留足，效果图里的「氛围」一半是软装给的。'},
+ {c:'设计阶段',t:'全套施工图有哪 9 张，为什么缺一不可',b:'原始结构/拆砌墙/平面布置/天花(灯位)/地面铺装/水电点位/立面/节点大样/主材表。\n没有水电点位图→工长看着办→插座永远在错的位置；没有立面图→定制柜与石膏线打架；没有节点大样→窗台石、门槛石、挡水条的收口全靠工人心情。\n付设计尾款前逐张点收，这是设计合同赋予你的权利。'},
+ {c:'施工选材',t:'水电验收 6 条硬标准（封槽前必须做完）',b:'①水路打压：国标 GB50242 要求试验压力≥0.6MPa、10 分钟掉压≤0.05MPa；装修行业通行做法更严——0.6-0.8MPa 保压 30 分钟\n②左热右冷、冷热水间距≥150mm\n③强弱电分管、间距≥150mm，交叉处屏蔽\n④空调/热水器/厨房独立回路；线径：照明1.5² 插座2.5² 空调4²\n⑤相位仪逐个测插座\n⑥封槽前360°拍照录像——将来挂画打孔全靠这套照片保命。'},
+ {c:'施工选材',t:'防水闭水试验正确姿势',b:'涂刷：地面满涂+墙面上翻30cm，淋浴区1.8m，2-3遍十字交叉；管根阴角附加层。\n闭水：蓄水2-3cm，静置24-48小时。关键动作是【下楼看邻居家天花板】，自家看不出渗漏。\n通过后贴砖不许再开槽动防水层，卫生间打孔用玻璃胶封孔。'},
+ {c:'施工选材',t:'贴砖验收：响鼓锤怎么用',b:'空鼓标准：单砖空鼓面积<15%，整体空鼓率<5%，主通道和墙砖上半部零容忍（会掉）。\n方法：响鼓锤（十几块钱）划着敲，声音发闷=实，清脆「咚咚」=空。\n再看：砖缝宽窄一致（1.5-2mm）、阴阳角方正、卫生间倒盆水全部流向地漏不积水。'},
+ {c:'施工选材',t:'板材环保等级一张表',b:'甲醛释放量（mg/m³）：ENF≤0.025 ＜ E0≤0.050 ＜ E1≤0.124（国标底线）。\n全屋定制建议≥E0，儿童房/老人房建议ENF。\n注意：环保的是「板材」不是「柜子」，封边工艺差=白买好板；要求商家出示板材检测报告原件，对得上品牌批次才算数。'},
+ {c:'施工选材',t:'增项黑名单：开工后最常见的 5 种加钱套路',b:'①水电按米计费+预估量给低→完工翻倍（防：约定超预估10%需签字）\n②「你家墙必须铲到红砖」→铲墙找平另收费（防：报价单写明基层处理范围）\n③打孔费/搬运费/垃圾清运二次收费（防：合同写「包含全部辅助费用」）\n④「这个工艺原价x现在优惠」话术增项（防：一律要书面报价单）\n⑤材料进场即安装，不给验收时间（防：约定主材进场业主验收后方可施工）。'},
+ {c:'施工选材',t:'付款节奏：钱在你手里才有话语权',b:'半包推荐节奏：开工≤30% → 水电验收合格后30% → 泥木油验收合格后30% → 竣工验收+保洁完成付尾款（尾款≥5%，最好留到保修期第一个雨季后）。\n任何「开工付60%」「今天签约明天付一半」的，直接换公司。付款只认验收合格，不认工期过半。'},
+ {c:'竣工入住',t:'甲醛治理：有用的和没用的',b:'有用：通风（开窗+工业风扇对流，效率最高且免费）、高温高湿加速释放（夏天关窗闷2天再通风循环）、入住后新风/空气净化器持续兜底。\n基本没用：绿萝/柚子皮/茶叶梗（心理安慰）、一次性「除醛服务」对板材内部长期释放源效果有限。\n检测：入住前找 CMA 资质机构（关窗12h采样），自购检测盒误差大只能看趋势。国标≤0.08mg/m³（GB/T 18883）。'},
+ {c:'竣工入住',t:'竣工验收清单（收房那天带着走一圈）',b:'①对照施工图逐项点验，尺寸抽查\n②全屋插座通电测试（带个充电器）、灯全开\n③各水盆放水+马桶连冲，看下水速度\n④门窗全开合，锁具顺畅\n⑤定制柜门缝均匀、封边无爆边、五金与合同一致\n⑥墙面灯光斜照看平整\n⑦索要：竣工图、水电照片、保修卡、剩余材料（补砖补漆用）。'},
+ {c:'竣工入住',t:'保修：法定最低标准记住两个数',b:'《住宅室内装饰装修管理办法》：正常使用条件下，装修工程最低保修 2 年，有防水要求的厨卫及外墙面防渗漏 5 年。\n合同里写得比这低的条款无效。保修期内出问题：先书面（微信文字也算）通知装修公司，留证据链。'}
+];
+function renderKnow(){
+ const q=(document.getElementById('ksearch').value||'').trim();
+ const cat=document.querySelector('#ktabs .tab.on')?.dataset.c||'全部';
+ const list=KNOW.filter(k=>(cat==='全部'||k.c===cat)&&(!q||k.t.includes(q)||k.b.includes(q)));
+ document.getElementById('klist').innerHTML=list.length?list.map(k=>
+  `<div class="kcard"><span class="tag" style="background:var(--blue-soft);color:var(--blue)">${k.c}</span><b style="margin-top:6px">${k.t}</b><div class="kc">${k.b}</div></div>`).join('')
+  :'<p class="muted">没搜到，换个关键词试试（如：打压 / 空鼓 / ENF / 尾款）</p>';
+}
+function askKnow(){
+ const q=document.getElementById('kq').value.trim();
+ if(!q)return toast('先输入问题');
+ // 本地相关性检索:按2字词片与知识条目的命中数打分
+ const grams=[];for(let i=0;i<q.length-1;i++){const g=q.slice(i,i+2);if(/[一-龥a-zA-Z0-9]{2}/.test(g))grams.push(g)}
+ const scored=KNOW.map(k=>({k,s:grams.filter(g=>k.t.includes(g)||k.b.includes(g)).length})).filter(x=>x.s>0).sort((a,b)=>b.s-a.s).slice(0,3);
+ S.questions.unshift({q,d:today(),hit:scored.length});save();
+ document.getElementById('kanswer').innerHTML=scored.length?
+  '<p class="muted" style="margin:10px 0 6px">从知识库中找到 '+scored.length+' 条相关（AI 对话版接入后可针对你的情况直接回答）：</p>'+
+  scored.map(x=>`<div class="kcard"><span class="tag" style="background:var(--blue-soft);color:var(--blue)">${x.k.c}</span><b style="margin-top:6px">${x.k.t}</b><div class="kc">${x.k.b}</div></div>`).join('')
+  :'<div class="warnbox">知识库暂无相关条目。你的问题已记录 —— 这些真实问题就是下一批知识库内容的来源；AI 对话版接入后也会优先覆盖。</div>';
+ document.getElementById('kq').value='';renderKQ();
+}
+function renderKQ(){
+ document.getElementById('kqlist').innerHTML=S.questions.length?
+  '<div class="muted" style="margin-bottom:4px">我的提问（'+S.questions.length+'）</div>'+S.questions.map((x,i)=>
+  `<div class="expense"><span>${esc(x.q)} ${x.hit?'':'<span class="tag" style="background:var(--amber-soft);color:var(--amber)">待补充</span>'}</span><span><span class="muted">${x.d}</span> <span class="del" style="position:static;display:inline-flex" onclick="S.questions.splice(${i},1);save();renderKQ()">×</span></span></div>`).join(''):'';
+}
+(function(){const cats=['全部','准备阶段','设计阶段','施工选材','竣工入住'];
+ document.getElementById('ktabs').innerHTML=cats.map((c,i)=>`<div class="tab${i?'':' on'}" data-c="${c}" onclick="[...this.parentNode.children].forEach(x=>x.classList.remove('on'));this.classList.add('on');renderKnow()">${c}</div>`).join('')})();
+
+/* ================= 需求梳理(8维度,对齐设计任务书) ================= */
+const NEED=[
+ {k:'family',t:'① 家庭成员与未来 3-5 年',q:'谁住？未来会变吗？',type:'multi',opts:['两口之家','有小孩(学龄前)','有小孩(上学)','计划要孩子','老人同住/常来','养猫/狗','未来3-5年人口会增加'],extra:'补充(如:孩子几岁、老人腿脚情况)'},
+ {k:'daily',t:'② 生活作息与习惯',q:'作息与生活方式?',type:'multi',opts:['双职工早出晚归','有人居家办公','夜猫子+早睡混住(需隔音)','爱囤货','洁癖/高频打扫','衣服多','鞋多(20双+)'],extra:'补充'},
+ {k:'cook',t:'③ 烹饪与用餐',q:'做饭频率与方式?',type:'single',opts:['天天开火中式爆炒(封闭厨房+大吸力烟机)','常做饭但轻油烟(可开放/半开放)','偶尔做,以简餐为主','基本外卖'],extra:'早餐台/岛台/洗碗机等诉求'},
+ {k:'store',t:'④ 收纳痛点',q:'现在最头疼的收纳问题?(多选)',type:'multi',opts:['玄关鞋帽','换季衣物被褥','厨房小家电','囤货(纸巾/饮料)','儿童玩具书籍','行李箱/大件','清洁工具(洗地机等)'],extra:'补充'},
+ {k:'fun',t:'⑤ 休闲与个性化空间',q:'家里要为什么活动留空间?',type:'multi',opts:['投影/观影','游戏/电竞位','健身角','阅读角','手办/收藏展示','麻将/棋牌','宠物空间'],extra:'补充'},
+ {k:'style',t:'⑥ 风格与审美',q:'喜欢的方向?(选1-2个)',type:'multi',opts:['奶油风','原木/日式','现代简约','法式/轻奢','复古/中古','工业风','无所谓,好打理就行'],extra:'贴链接或描述你收藏的参考图'},
+ {k:'budget',t:'⑦ 预算优先级',q:'钱优先花在哪?(按你心里的顺序选前3)',type:'multi',opts:['水电防水等隐蔽工程','定制柜板材环保','厨房设备','卫浴体验','家电','软装颜值','智能家居'],extra:'补充'},
+ {k:'special',t:'⑧ 特殊需求',q:'有没有这些情况?',type:'multi',opts:['家有过敏/呼吸道敏感(环保拉满)','适老化(防滑/扶手/夜灯)','母婴(洗澡台/围栏预留)','无障碍需求','宗教/习俗禁忌','二手房改造(涉及拆改)'],extra:'补充'}
+];
+let needIdx=0;
+function renderNeed(){
+ const d=NEED[needIdx];const ans=S.need[d.k]||{sel:[],extra:''};
+ document.getElementById('needform').innerHTML=`
+  <div style="display:flex;gap:6px;margin-bottom:16px">${NEED.map((n,i)=>{
+    const dn=S.need[n.k]&&(S.need[n.k].sel.length||S.need[n.k].extra);
+    return `<div onclick="needIdx=${i};renderNeed()" title="${n.t}" style="flex:1;height:7px;border-radius:99px;cursor:pointer;background:${i===needIdx?'var(--brand)':(dn?'#e2bba6':'var(--line)')}"></div>`}).join('')}</div>
+  <p style="margin-bottom:2px"><b style="font-size:16px">${d.t}</b></p>
+  <p class="muted" style="margin-bottom:12px">${d.q} ${d.type==='single'?'（单选）':'（可多选，点选/再点取消）'}</p>
+  <div>${d.opts.map(o=>`<span class="opt ${ans.sel.includes(o)?'sel':''}" style="display:inline-block;margin:0 8px 8px 0;padding:8px 16px" onclick="needSel('${d.k}','${o}',${d.type==='single'})">${o}</span>`).join('')}</div>
+  <input class="searchbox" style="margin-top:10px" placeholder="${d.extra}" value="${esc(ans.extra)}" onchange="S.need['${d.k}']=S.need['${d.k}']||{sel:[]};S.need['${d.k}'].extra=this.value;save();needProg()">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;gap:10px">
+    <button class="btn gray" onclick="needIdx=Math.max(0,needIdx-1);renderNeed()" ${needIdx===0?'disabled':''}>← 上一题${needIdx>0?' · '+NEED[needIdx-1].t.slice(2):''}</button>
+    <span class="muted" style="white-space:nowrap">${needIdx+1} / 8</span>
+    ${needIdx<7?`<button class="btn" onclick="needIdx++;renderNeed()">下一题 · ${NEED[needIdx+1].t.slice(2)} →</button>`:`<button class="btn" onclick="genNeedDoc()">✓ 全部答完，生成文档</button>`}
+  </div>`;
+ needProg();
+}
+function needSel(k,o,single){
+ S.need[k]=S.need[k]||{sel:[],extra:''};
+ if(single)S.need[k].sel=[o];
+ else{const i=S.need[k].sel.indexOf(o);i>-1?S.need[k].sel.splice(i,1):S.need[k].sel.push(o)}
+ save();renderNeed();
+}
+function needProg(){
+ const done=NEED.filter(d=>S.need[d.k]&&(S.need[d.k].sel.length||S.need[d.k].extra)).length;
+ document.getElementById('needprog').textContent=done+' / 8 维度已作答';
+ document.getElementById('needbar').style.width=done/8*100+'%';
+ renderNeedSummary();
+}
+function buildNeedDoc(){
+ const P=S.project||DEFAULT.project;
+ let out='《居住需求文档》\n项目:'+P.name+' · 总预算'+(P.budget/1e4)+'万\n生成:'+today()+'(由本人8维度问卷作答生成,供设计师参考)\n\n';
+ NEED.forEach(d=>{const a=S.need[d.k];
+  out+=d.t+'\n';
+  if(a&&(a.sel.length||a.extra)){if(a.sel.length)out+='· '+a.sel.join('\n· ')+'\n';if(a.extra)out+='· 补充:'+a.extra+'\n'}
+  else out+='· (未作答)\n';
+  out+='\n'});
+ out+='—— 请设计师依据以上需求出具:功能关系分析、平面方案(含取舍说明)、主要空间效果图。方案请逐条回应上述需求。';
+ return out;
+}
+function genNeedDoc(){document.getElementById('needdoc').style.display='block';
+ document.getElementById('needdoc-body').textContent=buildNeedDoc();
+ document.getElementById('needdoc').scrollIntoView({behavior:'smooth'})}
+function dlNeedDoc(){const b=new Blob([buildNeedDoc()],{type:'text/markdown'});
+ const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='居住需求文档.md';a.click()}
+function copyNeedDoc(){navigator.clipboard.writeText(buildNeedDoc()).then(()=>toast('已复制'))}
+
+/* ================= 量房与方案 ================= */
+function renderUploads(){
+ [['floor','up-floor','传户型图'],['site','up-site','传现场照片'],['render','up-render','传效果图']].forEach(([key,id,label])=>{
+  const el=document.getElementById(id);if(!el)return;
+  el.innerHTML=S.uploads[key].map((b,i)=>`<div class="thumbbox"><img class="thumb" src="${b}" onclick="viewImgEl(this)"><div class="del" onclick="S.uploads['${key}'].splice(${i},1);save();renderUploads()">×</div></div>`).join('')
+  +`<div class="upl" onclick="pickImg(b=>{S.uploads['${key}'].push(b);save();renderUploads()})">＋ ${label}</div>`});
+}
+function renderPlanChecks(){
+ document.getElementById('plan-checks').innerHTML=S.planChecks.map((c,i)=>
+  `<div class="check ${c.done?'done':''}" onclick="S.planChecks[${i}].done=!S.planChecks[${i}].done;save();renderPlanChecks()"><div class="box">${c.done?'✓':''}</div><div class="txt">${c.t}</div></div>`).join('');
+ const btn=document.getElementById('btn-confirm');
+ if(S.planConfirmed){btn.textContent='✅ 方案已确认锁定';btn.disabled=true}
+}
+function confirmPlan(){
+ if(!S.planChecks.every(c=>c.done)&&!confirm('合同约定的产出物还没勾完，确定要提前确认吗？\n（缺项确认 = 放弃议价权）'))return;
+ if(!confirm('确认方案并签字？\n\n确认后方案锁定；按合同约定 1 日内需支付设计费 60%（¥21,000）。'))return;
+ S.planConfirmed=true;save();renderPlanChecks();renderContract();renderHome();
+ toast('方案已锁定 · 「合同管理」里已生成 60% 付款待办');
+}
+function buildPack(){
+ return '【AI 方案资料包】\n\n'+buildNeedDoc()+'\n\n【户型资料】\n户型图 '+S.uploads.floor.length+' 张、现场照片 '+S.uploads.site.length+' 张(请连同本文一起发给 AI/设计师)\n\n【请产出】\n1. 动静/干湿分区与动线的功能关系分析\n2. 2-3 版平面布局建议,每版说明取舍\n3. 与需求文档逐条比对的核对表(满足/冲突/需确认)';
+}
+function exportAIPack(){
+ navigator.clipboard.writeText(buildPack()).then(()=>toast('资料包已复制 — 连同户型图一起发给 Claude 或设计师'));
+}
+function togglePack(){
+ const p=document.getElementById('packview');
+ if(p.style.display==='none'){p.textContent=buildPack();p.style.display='block'}
+ else p.style.display='none';
+}
+function renderNeedSummary(){
+ const el=document.getElementById('needsummary');if(!el)return;
+ el.innerHTML=NEED.map(d=>{
+  const a=S.need[d.k],has=a&&(a.sel.length||a.extra);
+  const txt=has?[...a.sel,a.extra].filter(Boolean).join('、'):'未作答';
+  return `<div style="display:flex;gap:8px;font-size:13px;padding:4px 0;border-bottom:1px dashed var(--line)">
+   <span style="white-space:nowrap;color:${has?'var(--green)':'var(--sub)'}">${has?'✓':'○'} ${d.t.slice(2)}</span>
+   <span class="${has?'':'muted'}" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(txt)}</span></div>`}).join('');
+}
+const PSTATUS=['草稿','待讨论','已定稿'];
+const PSC=['#8a857d','#b07d1e','#3d8b62'];
+function addPlan(){
+ S.plans.unshift({title:'方案 v'+(S.plans.length+1),content:'',date:todayISO(),status:0});
+ save();renderPlans();
+}
+function renderPlans(){
+ const el=document.getElementById('planlist');if(!el)return;
+ el.innerHTML=S.plans.length?S.plans.map((p,i)=>`
+  <div style="border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:10px">
+   <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px;flex-wrap:wrap">
+    <input class="cell" style="font-weight:700;max-width:160px" value="${esc(p.title)}" onchange="S.plans[${i}].title=this.value;save()">
+    <input type="date" value="${p.date}" style="font-size:11px;border:1px solid var(--line);border-radius:6px;padding:1px 4px" onchange="S.plans[${i}].date=this.value;save()">
+    ${PSTATUS.map((s,k)=>`<span style="font-size:11px;padding:2px 10px;border-radius:99px;cursor:pointer;border:1px solid ${k===p.status?PSC[k]:'var(--line)'};color:${PSC[k]};font-weight:${k===p.status?700:400}" onclick="S.plans[${i}].status=${k};save();renderPlans()">${k===p.status?'● ':''}${s}</span>`).join('')}
+    <span class="del" style="position:static;display:inline-flex;margin-left:auto" onclick="if(confirm('删除该方案版本？')){S.plans.splice(${i},1);save();renderPlans()}">×</span>
+   </div>
+   <textarea style="width:100%;min-height:110px;border:1px solid var(--line);border-radius:8px;padding:10px;font:inherit;font-size:13px" placeholder="粘贴 AI 产出的方案 / 设计师方案要点 / 每轮修改记录…（自动保存，随时可改）" onchange="S.plans[${i}].content=this.value;save()">${esc(p.content)}</textarea>
+  </div>`).join('')
+ :'<p class="muted">还没有方案版本。走路线 A 或 B 拿到第一版后点「＋ 新建方案版本」贴进来。</p>';
+}
+
+/* ================= 效果图链接归档 ================= */
+function addRenderLink(){
+ const u=prompt('粘贴酷家乐 3D 漫游 / 效果图链接:');if(!u)return;
+ S.renderLinks.push({u,d:today()});save();renderLinks();
+}
+function renderLinks(){
+ document.getElementById('renderlinks').innerHTML=S.renderLinks.map((l,i)=>
+  `<div class="expense"><a href="${esc(l.u)}" target="_blank" style="color:var(--blue);word-break:break-all">${esc(l.u)}</a><span><span class="muted">${l.d}</span> <span class="del" style="position:static;display:inline-flex" onclick="S.renderLinks.splice(${i},1);save();renderLinks()">×</span></span></div>`).join('');
+}
+
+/* ================= 施工图 ================= */
+function renderCD(){
+ document.getElementById('cdlist').innerHTML=S.cd.map((c,i)=>{
+  c.imgs=c.imgs||[];
+  return `<div style="border:1px solid var(--line);border-radius:10px;padding:8px">
+   <div class="check ${c.d?'done':''}" onclick="S.cd[${i}].d=!S.cd[${i}].d;save();renderCD()"><div class="box">${c.d?'✓':''}</div><div class="txt">${c.t}</div></div>
+   <div class="thumbwrap" style="margin-top:4px">
+    ${c.imgs.map((b,j)=>`<div class="thumbbox"><img class="thumb" style="width:76px;height:56px" src="${b}" onclick="viewImgEl(this)"><div class="del" onclick="S.cd[${i}].imgs.splice(${j},1);save();renderCD()">×</div></div>`).join('')}
+    <div class="upl" style="width:76px;height:56px" onclick="pickImg(b=>{S.cd[${i}].imgs=S.cd[${i}].imgs||[];S.cd[${i}].imgs.push(b);S.cd[${i}].d=true;save();renderCD()})">＋图纸</div>
+   </div></div>`}).join('');
+ document.getElementById('cdprog').textContent=S.cd.filter(c=>c.d).length+' / 9 已交付 · 拍照/截图传上来，随时点开看';
+}
+function viewImgEl(el){
+ const m=document.getElementById('lightbox');
+ m.querySelector('img').src=el.src;m.classList.add('on');
+}
+
+/* ================= 合同 ================= */
+function renderContract(){
+ const p1=document.getElementById('pay1'),b1=document.getElementById('pay1btn');
+ if(S.pay1done){p1.textContent='已付款 ✓';p1.style.background='var(--green-soft)';p1.style.color='var(--green)';b1.style.display='none'}
+ else if(S.planConfirmed){p1.textContent='应付款(方案已确认)';p1.style.background='var(--red-soft)';p1.style.color='var(--red)';b1.style.display='inline-block'}
+ document.getElementById('ctchecks').innerHTML=S.ct.map((c,i)=>
+  `<div class="check ${c.d?'done':''}" onclick="S.ct[${i}].d=!S.ct[${i}].d;save();renderContract()"><div class="box">${c.d?'✓':''}</div><div class="txt">${c.t}</div></div>`).join('');
+}
+function payNode(amt,note){
+ S.expenses.unshift({amt,cat:'硬装施工（半包人工+辅料）',note,date:today(),img:null});
+ S.pay1done=true;save();renderContract();renderBudget();renderHome();
+ toast('已记账 ¥'+amt.toLocaleString()+' · '+note);
+}
+
+/* ================= 施工追踪 ================= */
+function renderTrack(){
+ document.getElementById('tracklist').innerHTML=S.tasks.map((st,i)=>{
+  const done=st.items.filter((_,j)=>S.taskDone[i+'-'+j]).length;
+  const cls=done===st.items.length?'done':(done>0?'cur':'');
+  return `<div class="phase ${cls}"><div class="dot">${done===st.items.length?'✓':i+1}</div><div class="body">
+   <b>${st.name}</b> <span class="tag" style="background:${done===st.items.length?'var(--green-soft)':'var(--bg)'};color:${done===st.items.length?'var(--green)':'var(--sub)'}">${done}/${st.items.length}</span>
+   ${st.items.map((it,j)=>{const dn=S.taskDone[i+'-'+j];
+    const dv=(typeof dn==='string'&&dn.includes('-'))?dn:'';
+    return `<div class="check ${dn?'done':''}" onclick="toggleTask(${i},${j})"><div class="box">${dn?'✓':''}</div><div class="txt">${it.hard?'<span class="hard">'+it.t+'</span>':it.t}${dn?` <span onclick="event.stopPropagation()" style="white-space:nowrap"><span class="muted">完成于</span> <input type="date" value="${dv}" style="font:inherit;font-size:11px;color:var(--green);border:1px solid var(--line);border-radius:6px;padding:1px 4px;background:var(--card)" onchange="S.taskDone['${i}-${j}']=this.value;save();renderTrack()"></span>`:''}</div></div>`}).join('')}
+  </div></div>`}).join('');
+}
+
+function toggleTask(i,j){
+ const k=i+'-'+j;
+ if(S.taskDone[k])delete S.taskDone[k];
+ else S.taskDone[k]=todayISO();
+ save();renderTrack();renderHome();
+}
+
+/* ================= 预算 ================= */
+let expImgs=[];
+function openExpense(){expImgs=[];renderExpImgs();
+ document.getElementById('e-amt').value='';document.getElementById('e-note').value='';
+ document.getElementById('e-date').value=new Date().toISOString().slice(0,10);
+ document.getElementById('e-cat').innerHTML=S.cats.map(c=>`<option>${c.n}</option>`).join('')+'<option value="__new__">＋ 新建类目…</option>';
+ document.getElementById('expmodal').classList.add('on')}
+function closeExpense(){document.getElementById('expmodal').classList.remove('on')}
+function renderExpImgs(){document.getElementById('e-imgs').innerHTML=expImgs.map((b,i)=>
+ `<div class="thumbbox"><img class="thumb" src="${b}"><div class="del" onclick="expImgs.splice(${i},1);renderExpImgs()">×</div></div>`).join('')}
+function saveExpense(){
+ const amt=+document.getElementById('e-amt').value;
+ if(!amt||amt<=0)return toast('请填正确金额');
+ let cat=document.getElementById('e-cat').value;
+ if(cat==='__new__'){
+  const n=prompt('新类目名称（如：智能家居）:');if(!n)return;
+  const lim=+prompt('该类目预算上限（元）:','20000')||20000;
+  S.cats.push({n,limit:lim});cat=n;
+ }
+ S.expenses.unshift({amt,cat,
+  note:document.getElementById('e-note').value,date:document.getElementById('e-date').value,img:expImgs[0]||null});
+ save();closeExpense();renderBudget();renderHome();toast('已记账 ¥'+amt.toLocaleString());
+}
+function delExpense(i){if(!confirm('删除这笔支出？'))return;S.expenses.splice(i,1);save();renderBudget();renderHome()}
+function addCat(){
+ const n=prompt('新类目名称:');if(!n)return;
+ if(S.cats.some(c=>c.n===n))return toast('已有同名类目');
+ const lim=+prompt('预算上限（元）:','20000')||20000;
+ S.cats.push({n,limit:lim});save();renderBudget();
+}
+function renameCat(i){
+ const old=S.cats[i].n;
+ const n=prompt('类目改名:',old);if(!n||n===old)return;
+ S.cats[i].n=n;
+ S.expenses.forEach(e=>{if(e.cat===old)e.cat=n});
+ save();renderBudget();renderHome();
+}
+function delCat(i){
+ const c=S.cats[i];
+ const cnt=S.expenses.filter(e=>e.cat===c.n).length;
+ if(!confirm('删除类目「'+c.n+'」？'+(cnt?'\n该类目下有 '+cnt+' 笔支出，支出记录会保留但不再计入任何类目条。':'')))return;
+ S.cats.splice(i,1);save();renderBudget();renderHome();
+}
+function editLimit(i){
+ const v=prompt('「'+S.cats[i].n+'」预算上限(元):',S.cats[i].limit);
+ if(v&&+v>0){S.cats[i].limit=+v;save();renderBudget()}}
+function renderBudget(){
+ const spent=S.expenses.reduce((a,e)=>a+e.amt,0);
+ const PB=(S.project||DEFAULT.project).budget;
+ document.getElementById('b-total').textContent='¥'+PB.toLocaleString();
+ document.getElementById('b-spent').textContent='¥'+spent.toLocaleString();
+ document.getElementById('b-left').textContent='¥'+(PB-spent).toLocaleString();
+ document.getElementById('cats').innerHTML=S.cats.map((c,i)=>{
+  const cs=S.expenses.filter(e=>e.cat===c.n).reduce((a,e)=>a+e.amt,0);
+  const pct=Math.min(100,cs/c.limit*100),warn=cs>=c.limit*.9;
+  return `<div style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px">
+   <span style="cursor:pointer" onclick="renameCat(${i})">${c.n} ✎${warn?' <span class="tag" style="background:var(--red-soft);color:var(--red)">'+(cs>c.limit?'已超支':'接近超支')+'</span>':''}</span>
+   <span><span style="cursor:pointer" onclick="editLimit(${i})">${cs.toLocaleString()} / <u>${c.limit.toLocaleString()}</u> 元</span> <span class="del" style="position:static;display:inline-flex" onclick="delCat(${i})">×</span></span></div>
+   <div class="bar"><i style="width:${pct}%;${warn?'background:var(--red)':''}"></i></div></div>`}).join('');
+ document.getElementById('expcount').textContent=S.expenses.length+' 笔';
+ document.getElementById('explist').innerHTML=S.expenses.length?S.expenses.map((e,i)=>
+  `<div class="expense"><span>${e.img?'<img src="'+e.img+'" style="width:34px;height:34px;border-radius:6px;object-fit:cover;vertical-align:middle;margin-right:8px">':''}<b>¥${e.amt.toLocaleString()}</b> · ${e.cat.split('（')[0]}${e.note?' · '+esc(e.note):''}</span>
+   <span><span class="muted">${e.date||''}</span> <span class="del" style="position:static;display:inline-flex" onclick="delExpense(${i})">×</span></span></div>`).join('')
+  :'<p class="muted">还没有支出记录，点「记一笔」开始</p>';
+}
+
+/* ================= 采购清单 ================= */
+let curBuy='zc',openStatusIdx=-1;
+function buyTab(el){curBuy=el.dataset.t;openStatusIdx=-1;document.querySelectorAll('#p-buy .tab').forEach(t=>t.classList.remove('on'));el.classList.add('on');renderBuy()}
+function renderBuy(){
+ const rows=S.buy[curBuy].map((it,i)=>`<tr>
+  <td style="min-width:130px"><b>${esc(it.n)}</b><div class="muted">${esc(it.z)}</div></td>
+  <td style="white-space:nowrap">¥${esc(it.b)}</td>
+  <td style="min-width:80px"><input class="cell" type="number" placeholder="实付" value="${it.a}" onchange="setBuy(${i},'a',this.value)"></td>
+  <td style="min-width:130px"><input class="cell" placeholder="品牌型号" value="${esc(it.m)}" onchange="setBuy(${i},'m',this.value)">
+   <div style="display:flex;align-items:center;gap:4px"><input class="cell" style="font-size:11px" placeholder="🔗 粘贴购物链接" value="${esc(it.link||'')}" onchange="setBuy(${i},'link',this.value)">${it.link?`<a href="${esc(it.link)}" target="_blank" style="font-size:12px;color:var(--brand);white-space:nowrap;font-weight:600">去购买↗</a>`:`<a href="https://search.jd.com/Search?keyword=${encodeURIComponent(it.m||it.n)}" target="_blank" style="font-size:11px;color:var(--blue);white-space:nowrap">搜京东</a><a href="https://s.taobao.com/search?q=${encodeURIComponent(it.m||it.n)}" target="_blank" style="font-size:11px;color:var(--blue);white-space:nowrap">搜淘宝</a>`}</div></td>
+  <td class="muted" style="min-width:110px">${esc(it.r)}</td>
+  <td style="font-size:12px;color:var(--blue);min-width:110px">${esc(it.h)}</td>
+  <td style="min-width:92px">${openStatusIdx===i
+    ?STATUS.map((s,k)=>`<div style="margin:2px 0;padding:3px 10px;border-radius:99px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid ${k===it.s?STCOLOR[k]:'var(--line)'};color:${STCOLOR[k]};background:${k===it.s?'#faf8f5':'#fff'}" onclick="setBuy(${i},'s',${k})">${k===it.s?'● ':''}${s}</div>`).join('')
+    :`<span style="display:inline-block;padding:4px 12px;border-radius:99px;font-size:12px;font-weight:600;cursor:pointer;background:#f4f2ee;color:${STCOLOR[it.s]}" onclick="openStatusIdx=${i};renderBuy()">${STATUS[it.s]} ▾</span>`}</td>
+  <td><span class="del" style="position:static;display:inline-flex" onclick="delBuy(${i})">×</span></td>
+ </tr>`).join('');
+ document.getElementById('buytable').innerHTML=`<thead><tr><th>项目 / 区域·数量</th><th>预算参考</th><th>实付(元)</th><th>型号 / 购物链接</th><th>选购要点</th><th>采购时机</th><th>状态(点击切换)</th><th></th></tr></thead><tbody>${rows}</tbody>`;
+}
+function setBuy(i,k,v){
+ const it=S.buy[curBuy][i];
+ if(k==='a'){
+  const old=+it.a||0,nv=+v||0;it.a=v;
+  // 实付变化 → 同步预算流水(按表归类)
+  const cat=curBuy==='jd'?'家电':(curBuy==='rz'?'软装家具':'主材（自购）');
+  S.expenses=S.expenses.filter(e=>e.ref!==curBuy+i); // 移除旧联动记录
+  if(nv>0){S.expenses.unshift({amt:nv,cat,note:it.n+'（采购清单联动）',date:today(),img:null,ref:curBuy+i});toast('实付 ¥'+nv.toLocaleString()+' 已计入「'+cat+'」')}
+ }else it[k]=v;
+ if(k==='s'){openStatusIdx=-1;if(v===5)toast(it.n+' 已验收 ✓')}
+ save();renderBuy();renderBudget();renderHome();
+}
+function delBuy(i){if(!confirm('删除该采购项？'))return;S.buy[curBuy].splice(i,1);save();renderBuy();renderHome()}
+function addBuyItem(){
+ const n=prompt('采购项名称:');if(!n)return;
+ S.buy[curBuy].push({n,z:'',b:'-',a:'',m:'',r:'',h:'',s:0});save();renderBuy();
+}
+
+/* ================= 选材建议 ================= */
+const MAT=[
+ {k:'定制',t:'全屋定制（木作）',b:'【怎么选】定制=板材×服务。板材定环保耐用（≥E0，儿童房ENF），服务定落地效果（设计-复尺-安装-售后）。\n【报价拆穿】按投影面积报价要问清：含几个抽屉/几套五金/背板厚度（≥9mm）/见光板收不收费。低单价高增项是行业惯例。\n【验收】封边平滑无爆边、门缝均匀(≤2mm差)、五金品牌当场核对。\n【预算】139㎡ 全屋约33㎡投影 × 本地工厂1200-2000元/㎡(含柜门五金) ≈ 4-6.5万。'},
+ {k:'瓷砖',t:'瓷砖',b:'【怎么选】客餐厅通铺选800×800或750×1500哑光/柔光砖；厨卫墙砖选釉面好打理的。吸水率≤0.5%(瓷质砖)。\n【避坑】同一批号一次买齐(+8%损耗)，不同批次有色差；「特价砖」多是尾货批次。可退换条款写进单子。\n【验收】平整度(两砖对角捏平)、色差抽查、到货清点破损。\n【预算】60-150元/㎡中档足够，超300元/㎡为品牌溢价。'},
+ {k:'地板',t:'木地板',b:'【怎么选】卧室铺地板脚感好。多层实木(120-250/㎡)性价比最高；三层实木更环保；强化地板耐磨但脚感硬。\n【关键】看基材环保等级(≥E0)+耐磨转数(家用≥6000转)；地暖家庭选标注「地暖适用」。\n【避坑】辅料(地垫/扣条/踢脚线)另收费是重灾区，问「到手全包价」。\n【预算】42㎡卧室 × 150元 ≈ 6000-8000。'},
+ {k:'卫浴',t:'卫浴洁具',b:'【怎么选】马桶看釉面(顺滑不挂污)+冲力(虹吸静音/直冲有力)+坑距(量准300/400mm)；花洒看阀芯(陶瓷)和镀层。\n【顺序】水电前必须定：马桶坑距、花洒出水口高度(地面上2.0-2.1m)、浴室柜排水(墙排更好看)。\n【预算】两卫全套8000-15000（九牧/恒洁/箭牌中档）。'},
+ {k:'门窗',t:'门窗（封窗+室内门）',b:'【封窗】断桥铝型材壁厚≥1.4mm+中空玻璃(5+12A+5起步，临街选夹胶)；算价看「含纱窗含安装总价」。开工即定，生产周期20天。\n【室内门】实木复合门1200-2000/樘性价比最好；要含门套/五金/安装。\n【避坑】按「平方米」报低价再收「开扇费/转角费/打胶费」是套路，要一口价。'},
+ {k:'美缝',t:'美缝',b:'【怎么选】环氧彩砂>聚脲>普通美缝剂（防霉耐用排序）。卫生间厨房建议环氧彩砂。\n【时机】贴砖完成、装定制柜之前做（柜子装完美缝枪伸不进去）。\n【预算】全屋1500-3000（材料+人工），自己做省一半但腰会断。'},
+ {k:'灯具',t:'灯具与开关',b:'【怎么选】全屋色温统一(3000K温馨/4000K通透)，显色指数≥90。无主灯设计需在木工吊顶前定好筒射灯开孔尺寸和位置。\n【开关插座】公牛/施耐德，全屋60-80位；五孔带USB放床头，防溅盒进卫生间。\n【避坑】灯带变压器质量决定寿命，别买最便宜的。'},
+ {k:'涂料',t:'乳胶漆',b:'【怎么选】立邦/多乐士/都芳中档系列足够，认十环认证；儿童房可上竹炭/净味系列。\n【关键在工艺】基层处理>漆本身：耐水腻子2-3遍、1底2面、每遍间隔≥4小时。\n【避坑】「进口漆」溢价高，同品牌国产线品质接近；调深色多算一遍面漆的钱。'}
+];
+function renderMat(){
+ const tabs=document.getElementById('mattabs');
+ tabs.innerHTML=MAT.map((m,i)=>`<div class="tab${i?'':' on'}" onclick="[...this.parentNode.children].forEach(x=>x.classList.remove('on'));this.classList.add('on');document.getElementById('matbody').innerHTML=matCard(${i})">${m.t}</div>`).join('');
+ document.getElementById('matbody').innerHTML=matCard(0);
+}
+function matCard(i){return `<div class="card"><h3>${MAT[i].t}</h3><div class="kc" style="font-size:13px;white-space:pre-line;color:#55504a">${MAT[i].b}</div></div>`}
+
+/* ================= 验收中心 ================= */
+function renderAccept(){
+ document.getElementById('acceptlist').innerHTML=S.accept.map((n,i)=>{
+  const done=n.items.filter((_,j)=>S.acceptDone[i+'-'+j]).length;
+  return `<div class="card"><h3>${n.name} <span class="tag" style="background:${done===n.items.length?'var(--green-soft)':'var(--bg)'};color:${done===n.items.length?'var(--green)':'var(--sub)'}">${done}/${n.items.length}</span></h3>
+  ${n.items.map((it,j)=>`<div class="check ${S.acceptDone[i+'-'+j]?'done':''}" onclick="S.acceptDone['${i}-${j}']=!S.acceptDone['${i}-${j}'];save();renderAccept()"><div class="box">${S.acceptDone[i+'-'+j]?'✓':''}</div><div class="txt">${it.t}</div></div>`).join('')}
+  </div>`}).join('');
+}
+
+/* ================= 现场图库 ================= */
+function addLog(){
+ const note=document.getElementById('pnote').value.trim();
+ if(!note)return toast('先写一句记要');
+ S.photos.unshift({d:today(),note,imgs:[]});
+ document.getElementById('pnote').value='';save();renderPhotos();
+}
+function renderPhotos(){
+ document.getElementById('photolist').innerHTML=S.photos.length?S.photos.map((p,i)=>
+  `<div class="card"><div style="display:flex;justify-content:space-between"><b>${p.d}</b><span class="del" style="position:static;display:inline-flex" onclick="if(confirm('删除这条记录？')){S.photos.splice(${i},1);save();renderPhotos()}">×</span></div>
+   ${p.note?'<p style="font-size:13px;margin:4px 0">'+esc(p.note)+'</p>':''}
+   <div class="thumbwrap">${p.imgs.map((b,j)=>`<div class="thumbbox"><img class="thumb" src="${b}" onclick="viewImgEl(this)"><div class="del" onclick="S.photos[${i}].imgs.splice(${j},1);save();renderPhotos()">×</div></div>`).join('')}
+   <div class="upl" onclick="pickImg(b=>{S.photos[${i}].imgs.push(b);save();renderPhotos()})">＋图</div></div></div>`).join('')
+  :'<p class="muted" style="padding:0 4px">还没有记录。开工后每天随手拍几张 —— 隐蔽工程的照片将来都是证据。</p>';
+}
+
+/* ================= 初始化 ================= */
+[renderHome,renderKnow,renderKQ,renderNeed,renderUploads,renderPlanChecks,renderPlans,renderLinks,
+ renderCD,renderContract,renderTrack,renderBudget,renderBuy,renderMat,renderAccept,renderPhotos]
+ .forEach(f=>{try{f()}catch(e){console.error(f.name,e);toast('⚠️ 模块 '+f.name+' 渲染出错：'+e.message)}});
+</script>
+</body>
+</html>
