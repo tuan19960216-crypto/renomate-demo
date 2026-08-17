@@ -132,7 +132,18 @@
     <section class="page on" id="p-home">
       <div class="hero">
         <h2>Hi，饭粒 👋 距离入住还有 <span style="color:var(--brand)" id="h-days">—</span> 天</h2>
-        <div class="muted" style="margin-bottom:16px"><span id="proj-meta">杭州 · 139m² · 三室两厅 · 半包模式</span> · <span class="pill" style="background:var(--brand-soft);color:var(--brand)" id="proj-stage">设计阶段</span></div>
+        <div class="muted" style="margin-bottom:16px"><span id="proj-meta" onclick="toggleProjEdit()" style="cursor:pointer;border-bottom:1px dashed var(--line)" title="点击编辑项目档案">杭州 · 139m² · 三室两厅 · 半包模式 ✎</span> · <span class="pill" style="background:var(--brand-soft);color:var(--brand)" id="proj-stage">设计阶段</span></div>
+        <div id="proj-edit" style="display:none;background:var(--bg);border-radius:10px;padding:12px 14px;margin-bottom:14px;font-size:13px">
+          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+            城市 <input class="cell" style="width:70px" id="pe-city" onchange="updProj('city',this.value)">
+            面积 <input class="cell" type="number" style="width:64px" id="pe-area" onchange="updProj('area',this.value)"> ㎡
+            户型 <input class="cell" style="width:90px" id="pe-layout" onchange="updProj('layout',this.value)">
+            模式 <select class="cell" id="pe-mode" onchange="updProj('mode',this.value)"><option>全包</option><option>半包</option><option>清包</option><option>全案托管</option></select>
+            总预算 <input class="cell" type="number" style="width:70px" id="pe-budget" onchange="updProj('budget',this.value)"> 万
+            <button class="btn sm ghost" onclick="toggleProjEdit()">完成</button>
+          </div>
+          <p class="muted" style="margin-top:6px;font-size:12px">改动即时生效并全站联动：需求文档抬头、预算把控的类目基数都读这里。</p>
+        </div>
         <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px">
           <span>预算 <span id="proj-budget">50.0</span> 万 · 已花费 <b id="hero-spent">0</b> 万</span><span class="muted"><span id="hero-state">未超支</span> · <span id="hero-pct">0</span>%</span>
         </div>
@@ -454,7 +465,7 @@ const STATUS=['待定','已选型','已下单','已到货','已安装','已验�
 const STCOLOR=['#8a857d','#b07d1e','#3568a8','#7a5aa8','#3d8b62','#1f6b43'];
 const DEFAULT={
  planConfirmed:false, pay1done:false,
- project:{name:'杭州 · 139m² · 三室两厅 · 半包模式',budget:500000,stage:'设计阶段'},
+ project:{name:'杭州 · 139m² · 三室两厅 · 半包模式',city:'杭州',area:139,layout:'三室两厅',mode:'半包',budget:500000,stage:'设计阶段'},
  milestones:[{k:'design',n:'启动设计',d:'2026-08-05'},{k:'plan',n:'方案确认',d:''},{k:'start',n:'开工',d:'2026-08-28'},{k:'finish',n:'竣工',d:'2026-11-08'},{k:'movein',n:'入住目标',d:'2026-12-18'}],
  questions:[], plans:[],
  planChecks:[
@@ -616,7 +627,7 @@ function esc(s){return (s||'').replace(/</g,'&lt;')}
 /* ================= 首页 ================= */
 function renderHome(){
  const P=S.project||DEFAULT.project;
- document.getElementById('proj-meta').textContent=P.name;
+ document.getElementById('proj-meta').textContent=P.name+' ✎';
  document.getElementById('proj-stage').textContent=P.stage;
  document.getElementById('proj-budget').textContent=(P.budget/1e4).toFixed(1);
  const spent=S.expenses.reduce((a,e)=>a+e.amt,0);
@@ -708,6 +719,39 @@ function renderKQ(){
  document.getElementById('ktabs').innerHTML=cats.map((c,i)=>`<div class="tab${i?'':' on'}" data-c="${c}" onclick="[...this.parentNode.children].forEach(x=>x.classList.remove('on'));this.classList.add('on');renderKnow()">${c}</div>`).join('')})();
 
 /* ================= 需求梳理(8维度,对齐设计任务书) ================= */
+/* ================= 项目档案 ================= */
+function projF(){
+ S.project=S.project||JSON.parse(JSON.stringify(DEFAULT.project));
+ const P=S.project;
+ if(P.city===undefined){ // 老数据迁移:从 name 反解结构化字段
+  const m=(P.name||'').match(/^(.*?) · (\d+)m² · (.*?) · (.*?)模式/);
+  P.city=m?m[1]:DEFAULT.project.city;P.area=m?+m[2]:DEFAULT.project.area;
+  P.layout=m?m[3]:DEFAULT.project.layout;P.mode=m?m[4]:DEFAULT.project.mode;
+ }
+ return P;
+}
+function updProj(k,v){
+ const P=projF();
+ if(k==='budget')P.budget=Math.max(0,(+v||0))*1e4;
+ else if(k==='area')P.area=Math.max(1,+v||P.area);
+ else if(v)P[k]=v;
+ P.name=P.city+' · '+P.area+'m² · '+P.layout+' · '+P.mode+'模式';
+ save();
+ document.getElementById('proj-meta').textContent=P.name+' ✎';
+ try{renderHome();renderBudget()}catch(e){}
+}
+function toggleProjEdit(){
+ const el=document.getElementById('proj-edit'),P=projF();
+ if(el.style.display==='none'){
+  document.getElementById('pe-city').value=P.city;
+  document.getElementById('pe-area').value=P.area;
+  document.getElementById('pe-layout').value=P.layout;
+  document.getElementById('pe-mode').value=P.mode;
+  document.getElementById('pe-budget').value=P.budget/1e4;
+  el.style.display='block';
+ }else el.style.display='none';
+}
+
 const NSTAGE=['基本信息（房+人）','生活场景与动线','空间需求','风格与审美','预算','优先级与特殊需求'];
 const NEED=[
  {k:'house',s:0,t:'① 房屋信息',q:'房子的基本情况？',type:'multi',opts:['新房毛坯','二手房翻新','局部改造','精装房改造','老房(房龄15年+)','顶楼/一楼','有物业改造限制'],extra:'补充(城市/楼层/朝向/层高/房龄)'},
@@ -734,6 +778,17 @@ function renderNeed(){
   <p class="muted" style="margin-bottom:12px">${d.q} ${d.type==='single'?'（单选）':'（可多选，点选/再点取消）'}</p>
   <div>${d.opts.map(o=>`<span class="opt ${ans.sel.includes(o)?'sel':''}" style="display:inline-block;margin:0 8px 8px 0;padding:8px 16px" onclick="needSel('${d.k}','${o}',${d.type==='single'})">${o}</span>`).join('')}</div>
   <input class="searchbox" style="margin-top:10px" placeholder="${d.extra}" value="${esc(ans.extra)}" onchange="S.need['${d.k}']=S.need['${d.k}']||{sel:[]};S.need['${d.k}'].extra=this.value;save();needProg()">
+  ${d.k==='house'?(()=>{const P=projF();return `<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;background:var(--bg);border-radius:10px;padding:8px 12px;font-size:13px">
+    <span class="muted" style="font-size:12px">↳ 同步项目档案：</span>
+    城市 <input class="cell" style="width:70px" value="${esc(P.city)}" onchange="updProj('city',this.value)">
+    面积 <input class="cell" type="number" style="width:60px" value="${P.area}" onchange="updProj('area',this.value)"> ㎡
+    户型 <input class="cell" style="width:90px" value="${esc(P.layout)}" onchange="updProj('layout',this.value)">
+   </div>`})():''}
+  ${d.k==='budget'?(()=>{const P=projF();return `<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;background:var(--bg);border-radius:10px;padding:8px 12px;font-size:13px">
+    <span class="muted" style="font-size:12px">↳ 同步项目档案：</span>
+    总预算 <input class="cell" type="number" style="width:70px" value="${P.budget/1e4}" onchange="updProj('budget',this.value)"> 万
+    <span class="muted" style="font-size:12px">（写这里会联动总览页与预算把控的类目基数）</span>
+   </div>`})():''}
   <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;gap:10px">
     <button class="btn gray" onclick="needIdx=Math.max(0,needIdx-1);renderNeed()" ${needIdx===0?'disabled':''}>← 上一题${needIdx>0?' · '+NEED[needIdx-1].t.slice(2):''}</button>
     <span class="muted" style="white-space:nowrap">${needIdx+1} / ${NEED.length}</span>
