@@ -146,6 +146,9 @@
             户型 <input class="cell" style="width:90px" id="pe-layout" onchange="updProj('layout',this.value)">
             朝向 <select class="cell" id="pe-facing" onchange="updProj('facing',this.value)"><option>待确认</option><option>南北通透</option><option>东西通透</option><option>朝南</option><option>朝北</option><option>朝东</option><option>朝西</option></select><span class="qhelp" onclick="showHelp('facing')">❓怎么看?</span>
             层高 <input class="cell" type="number" step="0.01" style="width:60px" id="pe-height" placeholder="如2.75" onchange="updProj('height',this.value)"> m<span class="qhelp" onclick="showHelp('height')">❓怎么量?</span>
+            楼层 <input class="cell" type="number" style="width:48px" id="pe-floor" placeholder="如6" onchange="updProj('floor',this.value)"> 层
+            电梯 <select class="cell" id="pe-lift" onchange="updProj('lift',this.value)"><option>待确认</option><option>有</option><option>无</option></select>
+            建成年份 <input class="cell" type="number" style="width:64px" id="pe-year" placeholder="如2008" onchange="updProj('year',this.value)"><span class="qhelp" onclick="showHelp('age')">❓哪里查?</span>
             模式 <select class="cell" id="pe-mode" onchange="updProj('mode',this.value)"><option>全包</option><option>半包</option><option>清包</option><option>全案托管</option></select>
             总预算 <input class="cell" type="number" style="width:70px" id="pe-budget" onchange="updProj('budget',this.value)"> 万<span class="qhelp" onclick="showHelp('budget')">❓怎么定?</span>
             <button class="btn sm ghost" onclick="toggleProjEdit()">完成</button>
@@ -802,6 +805,9 @@ function projF(){
  }
  if(P.facing===undefined)P.facing='';
  if(P.height===undefined)P.height='';
+ if(P.floor===undefined)P.floor='';
+ if(P.lift===undefined)P.lift='';
+ if(P.year===undefined)P.year='';
  return P;
 }
 function updProj(k,v){
@@ -810,6 +816,9 @@ function updProj(k,v){
  else if(k==='area')P.area=Math.max(1,+v||P.area);
  else if(k==='facing')P.facing=v==='待确认'?'':v;
  else if(k==='height'){const h=parseFloat(v);P.height=(h>=2&&h<=6)?h:'';if(v&&!P.height)toast('层高一般在 2.4-3.5m 之间，请按「米」填，如 2.75')}
+ else if(k==='floor'){const f=parseInt(v);P.floor=(f>=-2&&f<=99)?f:''}
+ else if(k==='lift')P.lift=v==='待确认'?'':v;
+ else if(k==='year'){const y=parseInt(v);const now=new Date().getFullYear();P.year=(y>=1950&&y<=now)?y:'';if(v&&!P.year)toast('请填 4 位建成年份，如 2008')}
  else if(v)P[k]=v;
  P.name=P.city+' · '+P.area+'m² · '+P.layout+(P.facing?' · '+P.facing:'')+' · '+P.mode+'模式';
  save();
@@ -824,6 +833,9 @@ function toggleProjEdit(){
   document.getElementById('pe-layout').value=P.layout;
   document.getElementById('pe-facing').value=P.facing||'待确认';
   document.getElementById('pe-height').value=P.height||'';
+  document.getElementById('pe-floor').value=P.floor||'';
+  document.getElementById('pe-lift').value=P.lift||'待确认';
+  document.getElementById('pe-year').value=P.year||'';
   document.getElementById('pe-mode').value=P.mode;
   document.getElementById('pe-budget').value=P.budget/1e4;
   el.style.display='block';
@@ -863,6 +875,9 @@ function renderNeed(){
     户型 <input class="cell" style="width:90px" value="${esc(P.layout)}" onchange="updProj('layout',this.value)">
     朝向 <select class="cell" onchange="updProj('facing',this.value)">${['待确认','南北通透','东西通透','朝南','朝北','朝东','朝西'].map(o=>`<option ${o===(P.facing||'待确认')?'selected':''}>${o}</option>`).join('')}</select><span class="qhelp" onclick="showHelp('facing')">❓怎么看?</span>
     层高 <input class="cell" type="number" step="0.01" style="width:60px" placeholder="如2.75" value="${P.height||''}" onchange="updProj('height',this.value)"> m<span class="qhelp" onclick="showHelp('height')">❓怎么量?</span>
+    楼层 <input class="cell" type="number" style="width:48px" placeholder="如6" value="${P.floor||''}" onchange="updProj('floor',this.value)"> 层
+    电梯 <select class="cell" onchange="updProj('lift',this.value)">${['待确认','有','无'].map(o=>`<option ${o===(P.lift||'待确认')?'selected':''}>${o}</option>`).join('')}</select>
+    建成年份 <input class="cell" type="number" style="width:64px" placeholder="如2008" value="${P.year||''}" onchange="updProj('year',this.value)"><span class="qhelp" onclick="showHelp('age')">❓哪里查?</span>
    </div>`})():''}
   ${d.k==='budget'?(()=>{const P=projF();return `<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;background:var(--bg);border-radius:10px;padding:8px 12px;font-size:13px">
     <span class="muted" style="font-size:12px">↳ 同步项目档案：</span>
@@ -890,7 +905,9 @@ function needProg(){
 }
 function buildNeedDoc(){
  const P=S.project||DEFAULT.project;
- let out='《居住需求文档》\n项目:'+P.name+' · 总预算'+(P.budget/1e4)+'万\n朝向:'+(P.facing?P.facing+' [已确认]':'[待确认] 采光通风分析暂只依据开窗位置,朝向确认后补全')+'\n层高:'+(P.height?P.height+'m [已确认]'+(P.height<2.7?' ⚠️层高偏低:无主灯/复杂吊顶/新风需按净高谨慎评估':''):'[待确认] 影响吊顶/无主灯/新风可行性,量房时激光测距补')+'\n生成:'+today()+'(六阶段梳理作答生成,供设计师参考)\n每条信息带状态:[已确认]=本人作答 · [待确认]=未答或说不清,量房/沟通后补,不由 AI 猜\n\n';
+ let out='《居住需求文档》\n项目:'+P.name+' · 总预算'+(P.budget/1e4)+'万\n朝向:'+(P.facing?P.facing+' [已确认]':'[待确认] 采光通风分析暂只依据开窗位置,朝向确认后补全')+'\n层高:'+(P.height?P.height+'m [已确认]'+(P.height<2.7?' ⚠️层高偏低:无主灯/复杂吊顶/新风需按净高谨慎评估':''):'[待确认] 影响吊顶/无主灯/新风可行性,量房时激光测距补')
+ +'\n楼层:'+(P.floor?P.floor+'层·电梯'+(P.lift||'待确认')+(P.lift==='无'&&P.floor>=4?' ⚠️无电梯高楼层:材料上楼费另计,大件家具下单前先量楼梯转角尺寸':''):'[待确认]')
+ +'\n房龄:'+(P.year?P.year+'年建·约'+(new Date().getFullYear()-P.year)+'年'+((new Date().getFullYear()-P.year)>=15?' ⚠️老房:水电建议全换、墙面按铲到底报价、防水重做,预算上浮10-15%':' [已确认]'):'[待确认] 影响水电是否全换与基层处理报价')+'\n生成:'+today()+'(六阶段梳理作答生成,供设计师参考)\n每条信息带状态:[已确认]=本人作答 · [待确认]=未答或说不清,量房/沟通后补,不由 AI 猜\n\n';
  const missing=[];
  NSTAGE.forEach((sn,si)=>{
   out+='【阶段'+(si+1)+' · '+sn+'】\n';
@@ -1324,6 +1341,13 @@ const HELPLIB={
   ['问物业 / 开发商','报房号查图纸，顺便问清梁的位置和梁下高度'],
   ['经验参考','2000 年后商品房层高多为 2.8-3.0m，净高约 2.6-2.8m；别直接拿来用，量了才算数']],
   ai:'量出来发给 AI 判断能做什么：净高 <2.6m 慎做吊顶和新风；≥2.75m 才好做无主灯+全屋平顶；梁多的房间先把梁高发过来再定吊顶方案。'},
+ age:{q:'房龄 / 建成年份哪里查？',ways:[
+  ['房产证 / 不动产权证','看「竣工日期」或「建成年份」——注意登记日期≠建成年份，别看错行'],
+  ['购房合同','商品房买卖合同里有竣工验收日期；二手房合同通常也注明建成年代'],
+  ['贝壳 / 安居客等 App','搜小区名，小区页「建筑年代」一栏（同小区分期建的以自己那栋为准）'],
+  ['问物业 / 老邻居','物业有档案；老邻居一句话的事'],
+  ['为什么重要','房龄 >15 年：水电基本要全换、墙面多半要铲到底、老化防水要重做——直接影响预算 10-15%']],
+  ai:'拿不准就把房产证拍照发 AI 帮你找到那一行；实在查不到，按「老房」标准做预算最保险。'},
  bearing:{q:'承重墙怎么认？',ways:[
   ['最靠谱：问物业','要竣工图纸并让物业现场指认，拍照留证——这是唯一有效力的方式'],
   ['看图纸','结构图上黑色实心填充的墙体是承重墙'],
