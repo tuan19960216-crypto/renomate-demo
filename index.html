@@ -145,6 +145,7 @@
             面积 <input class="cell" type="number" style="width:64px" id="pe-area" onchange="updProj('area',this.value)"> ㎡<span class="qhelp" onclick="showHelp('area')">❓不知道?</span>
             户型 <input class="cell" style="width:90px" id="pe-layout" onchange="updProj('layout',this.value)">
             朝向 <select class="cell" id="pe-facing" onchange="updProj('facing',this.value)"><option>待确认</option><option>南北通透</option><option>东西通透</option><option>朝南</option><option>朝北</option><option>朝东</option><option>朝西</option></select><span class="qhelp" onclick="showHelp('facing')">❓怎么看?</span>
+            层高 <input class="cell" type="number" step="0.01" style="width:60px" id="pe-height" placeholder="如2.75" onchange="updProj('height',this.value)"> m<span class="qhelp" onclick="showHelp('height')">❓怎么量?</span>
             模式 <select class="cell" id="pe-mode" onchange="updProj('mode',this.value)"><option>全包</option><option>半包</option><option>清包</option><option>全案托管</option></select>
             总预算 <input class="cell" type="number" style="width:70px" id="pe-budget" onchange="updProj('budget',this.value)"> 万<span class="qhelp" onclick="showHelp('budget')">❓怎么定?</span>
             <button class="btn sm ghost" onclick="toggleProjEdit()">完成</button>
@@ -800,6 +801,7 @@ function projF(){
   P.layout=m?m[3]:DEFAULT.project.layout;P.mode=m?m[4]:DEFAULT.project.mode;
  }
  if(P.facing===undefined)P.facing='';
+ if(P.height===undefined)P.height='';
  return P;
 }
 function updProj(k,v){
@@ -807,6 +809,7 @@ function updProj(k,v){
  if(k==='budget')P.budget=Math.max(0,(+v||0))*1e4;
  else if(k==='area')P.area=Math.max(1,+v||P.area);
  else if(k==='facing')P.facing=v==='待确认'?'':v;
+ else if(k==='height'){const h=parseFloat(v);P.height=(h>=2&&h<=6)?h:'';if(v&&!P.height)toast('层高一般在 2.4-3.5m 之间，请按「米」填，如 2.75')}
  else if(v)P[k]=v;
  P.name=P.city+' · '+P.area+'m² · '+P.layout+(P.facing?' · '+P.facing:'')+' · '+P.mode+'模式';
  save();
@@ -820,6 +823,7 @@ function toggleProjEdit(){
   document.getElementById('pe-area').value=P.area;
   document.getElementById('pe-layout').value=P.layout;
   document.getElementById('pe-facing').value=P.facing||'待确认';
+  document.getElementById('pe-height').value=P.height||'';
   document.getElementById('pe-mode').value=P.mode;
   document.getElementById('pe-budget').value=P.budget/1e4;
   el.style.display='block';
@@ -858,6 +862,7 @@ function renderNeed(){
     面积 <input class="cell" type="number" style="width:60px" value="${P.area}" onchange="updProj('area',this.value)"> ㎡<span class="qhelp" onclick="showHelp('area')">❓不知道?</span>
     户型 <input class="cell" style="width:90px" value="${esc(P.layout)}" onchange="updProj('layout',this.value)">
     朝向 <select class="cell" onchange="updProj('facing',this.value)">${['待确认','南北通透','东西通透','朝南','朝北','朝东','朝西'].map(o=>`<option ${o===(P.facing||'待确认')?'selected':''}>${o}</option>`).join('')}</select><span class="qhelp" onclick="showHelp('facing')">❓怎么看?</span>
+    层高 <input class="cell" type="number" step="0.01" style="width:60px" placeholder="如2.75" value="${P.height||''}" onchange="updProj('height',this.value)"> m<span class="qhelp" onclick="showHelp('height')">❓怎么量?</span>
    </div>`})():''}
   ${d.k==='budget'?(()=>{const P=projF();return `<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;background:var(--bg);border-radius:10px;padding:8px 12px;font-size:13px">
     <span class="muted" style="font-size:12px">↳ 同步项目档案：</span>
@@ -885,7 +890,7 @@ function needProg(){
 }
 function buildNeedDoc(){
  const P=S.project||DEFAULT.project;
- let out='《居住需求文档》\n项目:'+P.name+' · 总预算'+(P.budget/1e4)+'万\n朝向:'+(P.facing?P.facing+' [已确认]':'[待确认] 采光通风分析暂只依据开窗位置,朝向确认后补全')+'\n生成:'+today()+'(六阶段梳理作答生成,供设计师参考)\n每条信息带状态:[已确认]=本人作答 · [待确认]=未答或说不清,量房/沟通后补,不由 AI 猜\n\n';
+ let out='《居住需求文档》\n项目:'+P.name+' · 总预算'+(P.budget/1e4)+'万\n朝向:'+(P.facing?P.facing+' [已确认]':'[待确认] 采光通风分析暂只依据开窗位置,朝向确认后补全')+'\n层高:'+(P.height?P.height+'m [已确认]'+(P.height<2.7?' ⚠️层高偏低:无主灯/复杂吊顶/新风需按净高谨慎评估':''):'[待确认] 影响吊顶/无主灯/新风可行性,量房时激光测距补')+'\n生成:'+today()+'(六阶段梳理作答生成,供设计师参考)\n每条信息带状态:[已确认]=本人作答 · [待确认]=未答或说不清,量房/沟通后补,不由 AI 猜\n\n';
  const missing=[];
  NSTAGE.forEach((sn,si)=>{
   out+='【阶段'+(si+1)+' · '+sn+'】\n';
@@ -1312,6 +1317,13 @@ const HELPLIB={
   ['问物业 / 中介 / 邻居','报房号即可；「南北通透」指南北两侧都有窗且能对流'],
   ['购房合同 / 房产证附图','附图带指北针，最权威']],
   ai:'把户型图拍照发给 AI，让它按指北针帮你判读朝向和主要采光面；没有指北针就先标「待确认」——朝向影响采光通风分析，宁可空着别猜。'},
+ height:{q:'层高怎么量 / 去哪查？',ways:[
+  ['激光测距仪（最准）','几十块一个或找物业借，站地面对准天花板一按就出数；每个房间量一下，有梁的地方单独量'],
+  ['卷尺 + 杆','卷尺贴墙角从地量到顶；一个人够不着就绑在晾衣杆上'],
+  ['购房合同 / 图纸','技术条款里写的「层高」是楼板到楼板；你实际能用的「净高」≈层高 − 10~15cm 楼板厚度'],
+  ['问物业 / 开发商','报房号查图纸，顺便问清梁的位置和梁下高度'],
+  ['经验参考','2000 年后商品房层高多为 2.8-3.0m，净高约 2.6-2.8m；别直接拿来用，量了才算数']],
+  ai:'量出来发给 AI 判断能做什么：净高 <2.6m 慎做吊顶和新风；≥2.75m 才好做无主灯+全屋平顶；梁多的房间先把梁高发过来再定吊顶方案。'},
  bearing:{q:'承重墙怎么认？',ways:[
   ['最靠谱：问物业','要竣工图纸并让物业现场指认，拍照留证——这是唯一有效力的方式'],
   ['看图纸','结构图上黑色实心填充的墙体是承重墙'],
