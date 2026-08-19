@@ -144,6 +144,7 @@
             城市 <input class="cell" style="width:70px" id="pe-city" onchange="updProj('city',this.value)">
             面积 <input class="cell" type="number" style="width:64px" id="pe-area" onchange="updProj('area',this.value)"> ㎡<span class="qhelp" onclick="showHelp('area')">❓不知道?</span>
             户型 <input class="cell" style="width:90px" id="pe-layout" onchange="updProj('layout',this.value)">
+            朝向 <select class="cell" id="pe-facing" onchange="updProj('facing',this.value)"><option>待确认</option><option>南北通透</option><option>东西通透</option><option>朝南</option><option>朝北</option><option>朝东</option><option>朝西</option></select><span class="qhelp" onclick="showHelp('facing')">❓怎么看?</span>
             模式 <select class="cell" id="pe-mode" onchange="updProj('mode',this.value)"><option>全包</option><option>半包</option><option>清包</option><option>全案托管</option></select>
             总预算 <input class="cell" type="number" style="width:70px" id="pe-budget" onchange="updProj('budget',this.value)"> 万<span class="qhelp" onclick="showHelp('budget')">❓怎么定?</span>
             <button class="btn sm ghost" onclick="toggleProjEdit()">完成</button>
@@ -532,7 +533,7 @@ const STATUS=['待定','已选型','已下单','已到货','已安装','已验�
 const STCOLOR=['#8a857d','#b07d1e','#3568a8','#7a5aa8','#3d8b62','#1f6b43'];
 const DEFAULT={
  planConfirmed:false, pay1done:false,
- project:{name:'杭州 · 139m² · 三室两厅 · 半包模式',city:'杭州',area:139,layout:'三室两厅',mode:'半包',budget:500000,stage:'设计阶段'},
+ project:{name:'杭州 · 139m² · 三室两厅 · 半包模式',city:'杭州',area:139,layout:'三室两厅',mode:'半包',facing:'',budget:500000,stage:'设计阶段'},
  milestones:[{k:'design',n:'启动设计',d:'2026-08-05'},{k:'plan',n:'方案确认',d:''},{k:'start',n:'开工',d:'2026-08-28'},{k:'finish',n:'竣工',d:'2026-11-08'},{k:'movein',n:'入住目标',d:'2026-12-18'}],
  questions:[], plans:[],
  planChecks:[
@@ -798,14 +799,16 @@ function projF(){
   P.city=m?m[1]:DEFAULT.project.city;P.area=m?+m[2]:DEFAULT.project.area;
   P.layout=m?m[3]:DEFAULT.project.layout;P.mode=m?m[4]:DEFAULT.project.mode;
  }
+ if(P.facing===undefined)P.facing='';
  return P;
 }
 function updProj(k,v){
  const P=projF();
  if(k==='budget')P.budget=Math.max(0,(+v||0))*1e4;
  else if(k==='area')P.area=Math.max(1,+v||P.area);
+ else if(k==='facing')P.facing=v==='待确认'?'':v;
  else if(v)P[k]=v;
- P.name=P.city+' · '+P.area+'m² · '+P.layout+' · '+P.mode+'模式';
+ P.name=P.city+' · '+P.area+'m² · '+P.layout+(P.facing?' · '+P.facing:'')+' · '+P.mode+'模式';
  save();
  document.getElementById('proj-meta').textContent=P.name+' ✎';
  try{renderHome();renderBudget()}catch(e){}
@@ -816,6 +819,7 @@ function toggleProjEdit(){
   document.getElementById('pe-city').value=P.city;
   document.getElementById('pe-area').value=P.area;
   document.getElementById('pe-layout').value=P.layout;
+  document.getElementById('pe-facing').value=P.facing||'待确认';
   document.getElementById('pe-mode').value=P.mode;
   document.getElementById('pe-budget').value=P.budget/1e4;
   el.style.display='block';
@@ -853,6 +857,7 @@ function renderNeed(){
     城市 <input class="cell" style="width:70px" value="${esc(P.city)}" onchange="updProj('city',this.value)">
     面积 <input class="cell" type="number" style="width:60px" value="${P.area}" onchange="updProj('area',this.value)"> ㎡<span class="qhelp" onclick="showHelp('area')">❓不知道?</span>
     户型 <input class="cell" style="width:90px" value="${esc(P.layout)}" onchange="updProj('layout',this.value)">
+    朝向 <select class="cell" onchange="updProj('facing',this.value)">${['待确认','南北通透','东西通透','朝南','朝北','朝东','朝西'].map(o=>`<option ${o===(P.facing||'待确认')?'selected':''}>${o}</option>`).join('')}</select><span class="qhelp" onclick="showHelp('facing')">❓怎么看?</span>
    </div>`})():''}
   ${d.k==='budget'?(()=>{const P=projF();return `<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;background:var(--bg);border-radius:10px;padding:8px 12px;font-size:13px">
     <span class="muted" style="font-size:12px">↳ 同步项目档案：</span>
@@ -880,7 +885,7 @@ function needProg(){
 }
 function buildNeedDoc(){
  const P=S.project||DEFAULT.project;
- let out='《居住需求文档》\n项目:'+P.name+' · 总预算'+(P.budget/1e4)+'万\n生成:'+today()+'(六阶段梳理作答生成,供设计师参考)\n每条信息带状态:[已确认]=本人作答 · [待确认]=未答或说不清,量房/沟通后补,不由 AI 猜\n\n';
+ let out='《居住需求文档》\n项目:'+P.name+' · 总预算'+(P.budget/1e4)+'万\n朝向:'+(P.facing?P.facing+' [已确认]':'[待确认] 采光通风分析暂只依据开窗位置,朝向确认后补全')+'\n生成:'+today()+'(六阶段梳理作答生成,供设计师参考)\n每条信息带状态:[已确认]=本人作答 · [待确认]=未答或说不清,量房/沟通后补,不由 AI 猜\n\n';
  const missing=[];
  NSTAGE.forEach((sn,si)=>{
   out+='【阶段'+(si+1)+' · '+sn+'】\n';
@@ -1300,6 +1305,13 @@ const HELPLIB={
   ['倒推法','能拿出的钱 × 85% 当预算，留 15% 应对意外（一定会有意外）'],
   ['别漏大头','家电+软装 ≈ 硬装的一半，很多人只算了硬装就见底了']],
   ai:'把面积、城市、想要的效果发给 AI 助手，让它帮你估一版分项预算。'},
+ facing:{q:'房屋朝向怎么看？',ways:[
+  ['户型图指北针','户型图角落的圆圈箭头（N/北）就是指北针，主卧和客厅阳台窗朝哪边，房子就叫朝哪'],
+  ['手机指南针','站在客厅阳台，脸朝窗外打开手机指南针 App，显示的方向就是朝向'],
+  ['看太阳','早上晒进来=朝东，下午西晒=朝西，正午最亮=朝南，全天没直射=朝北'],
+  ['问物业 / 中介 / 邻居','报房号即可；「南北通透」指南北两侧都有窗且能对流'],
+  ['购房合同 / 房产证附图','附图带指北针，最权威']],
+  ai:'把户型图拍照发给 AI，让它按指北针帮你判读朝向和主要采光面；没有指北针就先标「待确认」——朝向影响采光通风分析，宁可空着别猜。'},
  bearing:{q:'承重墙怎么认？',ways:[
   ['最靠谱：问物业','要竣工图纸并让物业现场指认，拍照留证——这是唯一有效力的方式'],
   ['看图纸','结构图上黑色实心填充的墙体是承重墙'],
