@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>装修 AI 管家 · v0.2</title>
+<title>装修 AI 管家 · v0.5</title>
 <style>
   :root{
     --bg:#f7f5f1; --card:#fff; --ink:#2b2926; --sub:#8a857d;
@@ -23,7 +23,7 @@
   .nav{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:9px;cursor:pointer;color:#55504a;margin-bottom:2px}
   .nav:hover{background:var(--bg)}
   .nav.on{background:var(--brand-soft);color:var(--brand);font-weight:600}
-  .main{flex:1;padding:26px 32px;max-width:1120px}
+  .main{flex:1;min-width:0;padding:26px 32px;max-width:1120px}
   .page{display:none}.page.on{display:block}
   h1{font-size:20px;margin-bottom:4px}
   .pagesub{color:var(--sub);margin-bottom:14px}
@@ -103,18 +103,63 @@
   .stepguide b{display:block;color:var(--brand);margin-bottom:2px}
   .qhelp{cursor:pointer;color:var(--blue);font-size:12px;white-space:nowrap}
   @media(max-width:900px){.stepguide{grid-template-columns:1fr}}
+  /* ===== 右侧常驻栏：流程树 + AI 助手 ===== */
+  .rail{width:312px;flex-shrink:0;background:var(--card);border-left:1px solid var(--line);position:sticky;top:0;height:100vh;display:flex;flex-direction:column;transition:width .15s}
+  .rail.fold{width:40px}
+  .rail.fold .railtabs{display:none}
+  .rail.fold .railbody{display:none!important}
+  .railtop{display:flex;align-items:center;gap:6px;padding:8px;border-bottom:1px solid var(--line);flex-shrink:0}
+  .railtabs{display:flex;gap:4px;flex:1;min-width:0}
+  .rtab{flex:1;text-align:center;font-size:12px;padding:6px 2px;border-radius:8px;cursor:pointer;color:#55504a;white-space:nowrap}
+  .rtab:hover{background:var(--bg)}
+  .rtab.on{background:var(--brand-soft);color:var(--brand);font-weight:600}
+  .railfold{cursor:pointer;color:var(--sub);padding:2px 5px;font-size:12px;border-radius:6px}
+  .railfold:hover{background:var(--bg)}
+  .railbody{flex:1;overflow-y:auto;padding:12px}
+  /* 红色 * 求助标记 */
+  .qmark{color:var(--red);cursor:pointer;font-weight:700;font-size:15px;vertical-align:super;line-height:0;margin-left:1px;padding:0 2px}
+  .qmark:hover{color:var(--brand)}
+  /* 流程树 */
+  .tgrp{font-size:11px;color:var(--sub);letter-spacing:1px;margin:14px 0 4px;cursor:pointer;user-select:none}
+  .tgrp:first-child{margin-top:2px}
+  .tnode{display:flex;gap:8px;padding:5px 5px;border-radius:8px;cursor:pointer;font-size:13px;align-items:flex-start}
+  .tnode:hover{background:var(--bg)}
+  .tnode.cur{background:var(--brand-soft)}
+  .tdot{width:17px;height:17px;border-radius:99px;border:1.5px solid var(--line);flex-shrink:0;font-size:10px;text-align:center;line-height:14px;color:var(--sub);margin-top:3px}
+  .tdot.done{background:var(--green-soft);border-color:var(--green);color:var(--green)}
+  .tdot.cur{border-color:var(--brand);color:var(--brand)}
+  .tneed{font-size:11.5px;color:var(--sub);margin:1px 0 2px 30px;line-height:1.5}
+  .tneed.ok{color:var(--green)}
+  /* AI 助手气泡 */
+  .msg{border-radius:10px;padding:9px 11px;margin-bottom:8px;font-size:12.5px;white-space:pre-wrap;word-break:break-word;line-height:1.65}
+  .msg.u{background:var(--brand-soft);margin-left:22px}
+  .msg.a{background:var(--bg);margin-right:6px}
+  .msg.sys{background:var(--amber-soft);font-size:11.5px}
+  .msg img{width:100%;border-radius:8px;margin-top:6px;display:block}
+  /* 技术标注开关 */
+  body.hidetech .boundary{display:none}
+  .techtog{font-size:11px;color:var(--sub);padding:4px 10px;cursor:pointer;display:flex;align-items:center;gap:5px}
+  .techtog:hover{color:var(--ink)}
+  /* 只读档案摘要 */
+  .metabar{display:flex;gap:14px;flex-wrap:wrap;align-items:center;font-size:13px;background:var(--bg);border-radius:10px;padding:9px 13px;margin-bottom:14px}
+  .metabar .mi{white-space:nowrap}
+  .metabar .mi b{font-weight:600}
+  .metabar .miss{color:var(--red);cursor:pointer}
+  @media(max-width:1180px){.rail{position:fixed;right:0;top:0;z-index:60;box-shadow:-6px 0 24px rgba(43,41,38,.12)}}
   @media(max-width:900px){.grid2,.grid3,.grid4,.rmwrap{grid-template-columns:1fr}.main{padding:18px}.side{width:170px}}
+  @media(max-width:900px){.rail{width:40px}.rail:not(.fold){width:300px}}
 </style>
 </head>
 <body>
 <div class="app">
   <aside class="side">
     <div class="logo">装修<span>AI</span>管家</div>
-    <div class="ver">v0.2 · 数据存在本机浏览器</div>
+    <div class="ver">v0.5 · 数据存在本机浏览器</div>
     <div class="group">总览</div>
     <div class="nav on" data-p="home">🏠 项目总览</div>
-    <div class="group">装修前 · 设计链路</div>
+    <div class="group">第 0 步 · 拿房</div>
     <div class="nav" data-p="inspect">🔑 收房验房</div>
+    <div class="group">装修前 · 设计链路</div>
     <div class="nav" data-p="know">📖 装修知识</div>
     <div class="nav" data-p="need">📝 需求梳理</div>
     <div class="nav" data-p="design">📐 量房与方案</div>
@@ -128,8 +173,10 @@
     <div class="nav" data-p="mat">🧱 选材建议</div>
     <div class="nav" data-p="accept">✅ 验收中心</div>
     <div class="nav" data-p="photo">📷 现场图库</div>
+    <div class="group">装修后 · 入住保修</div>
     <div class="nav" data-p="movein">🏡 入住与保修</div>
-    <div style="padding:16px 10px"><button class="btn gray sm" onclick="resetAll()">重置演示数据</button></div>
+    <div class="techtog" onclick="toggleTech()" id="techtog" style="margin-top:14px">☐ 显示技术标注</div>
+    <div style="padding:8px 10px 16px"><button class="btn gray sm" onclick="resetAll()">重置演示数据</button></div>
   </aside>
 
   <main class="main">
@@ -138,23 +185,8 @@
     <section class="page on" id="p-home">
       <div class="hero">
         <h2>Hi，饭粒 👋 距离入住还有 <span style="color:var(--brand)" id="h-days">—</span> 天</h2>
-        <div class="muted" style="margin-bottom:16px"><span id="proj-meta" onclick="toggleProjEdit()" style="cursor:pointer;border-bottom:1px dashed var(--line)" title="点击编辑项目档案">杭州 · 139m² · 三室两厅 · 半包模式 ✎</span> · <span class="pill" style="background:var(--brand-soft);color:var(--brand)" id="proj-stage">设计阶段</span></div>
-        <div id="proj-edit" style="display:none;background:var(--bg);border-radius:10px;padding:12px 14px;margin-bottom:14px;font-size:13px">
-          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
-            城市 <input class="cell" style="width:70px" id="pe-city" onchange="updProj('city',this.value)">
-            面积 <input class="cell" type="number" style="width:64px" id="pe-area" onchange="updProj('area',this.value)"> ㎡<span class="qhelp" onclick="showHelp('area')">❓不知道?</span>
-            户型 <input class="cell" style="width:90px" id="pe-layout" onchange="updProj('layout',this.value)">
-            朝向 <select class="cell" id="pe-facing" onchange="updProj('facing',this.value)"><option>待确认</option><option>南北通透</option><option>东西通透</option><option>朝南</option><option>朝北</option><option>朝东</option><option>朝西</option></select><span class="qhelp" onclick="showHelp('facing')">❓怎么看?</span>
-            层高 <input class="cell" type="number" step="0.01" style="width:60px" id="pe-height" placeholder="如2.75" onchange="updProj('height',this.value)"> m<span class="qhelp" onclick="showHelp('height')">❓怎么量?</span>
-            楼层 <input class="cell" type="number" style="width:48px" id="pe-floor" placeholder="如6" onchange="updProj('floor',this.value)"> 层
-            电梯 <select class="cell" id="pe-lift" onchange="updProj('lift',this.value)"><option>待确认</option><option>有</option><option>无</option></select>
-            建成年份 <input class="cell" type="number" style="width:64px" id="pe-year" placeholder="如2008" onchange="updProj('year',this.value)"><span class="qhelp" onclick="showHelp('age')">❓哪里查?</span>
-            模式 <select class="cell" id="pe-mode" onchange="updProj('mode',this.value)"><option>全包</option><option>半包</option><option>清包</option><option>全案托管</option></select>
-            总预算 <input class="cell" type="number" style="width:70px" id="pe-budget" onchange="updProj('budget',this.value)"> 万<span class="qhelp" onclick="showHelp('budget')">❓怎么定?</span>
-            <button class="btn sm ghost" onclick="toggleProjEdit()">完成</button>
-          </div>
-          <p class="muted" style="margin-top:6px;font-size:12px">改动即时生效并全站联动：需求文档抬头、预算把控的类目基数都读这里。</p>
-        </div>
+        <div class="muted" style="margin-bottom:10px"><span id="proj-meta">杭州 · 138m² · 三室两厅 · 半包模式</span> · <span class="pill" style="background:var(--brand-soft);color:var(--brand)" id="proj-stage">设计阶段</span></div>
+        <div class="metabar" id="proj-meta-bar"></div>
         <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px">
           <span>预算 <span id="proj-budget">50.0</span> 万 · 已花费 <b id="hero-spent">0</b> 万</span><span class="muted"><span id="hero-state">未超支</span> · <span id="hero-pct">0</span>%</span>
         </div>
@@ -241,13 +273,13 @@
       <div class="pagesub">对齐设计合同三阶段。上传户型图和现场照片后，AI 产出方案建议（当前版本：资料就绪后交给 AI 会话产出，P1 接 API 全自动）</div>
       <div class="boundary"><span class="bd ai"><b>AI</b>:功能关系分析 · 平面布局建议 · 方案比对需求</span><span class="bd sys"><b>代码</b>:资料归档 · 确认锁定</span><span class="bd hu"><b>人</b>:签字确认</span></div>
       <div class="card">
-        <h3>① 设计准备（量房资料）<span class="qhelp" onclick="showHelp('floorplan')">❓户型图去哪找</span></h3>
+        <h3>① 设计准备（量房资料）<span class="qmark" onclick="railHelp('floorplan')" title="户型图去哪找？点我">*</span></h3>
         <p class="muted">原始户型图（开发商图/物业存档图均可）+ 现场照片（每个房间 2-3 张 + 梁位 + 入户水电表位置）</p>
         <div style="display:flex;gap:24px;flex-wrap:wrap;margin-top:8px">
           <div><div class="muted" style="margin-bottom:4px">户型图</div><div class="thumbwrap" id="up-floor"></div></div>
           <div><div class="muted" style="margin-bottom:4px">现场照片</div><div class="thumbwrap" id="up-site"></div></div>
         </div>
-        <div class="warnbox">⚠️ <b class="hard">承重墙、配重墙（阳台垛子）、燃气管道不可拆改</b> —— 量房时让物业指认并拍照标注，这是全流程唯一不可逆的红线。<span class="qhelp" onclick="showHelp('bearing')">❓承重墙怎么认</span></div>
+        <div class="warnbox">⚠️ <b class="hard">承重墙、配重墙（阳台垛子）、燃气管道不可拆改</b> —— 量房时让物业指认并拍照标注，这是全流程唯一不可逆的红线。<span class="qmark" onclick="railHelp('bearing')" title="承重墙怎么认？点我">*</span></div>
       </div>
       <div class="card">
         <h3>🚶 四条动线自查 <span class="muted">方案好不好，先走一遍这四条线——动线顺了，房子才「好住」</span></h3>
@@ -502,6 +534,18 @@
     </section>
 
   </main>
+
+  <aside class="rail" id="rail">
+    <div class="railtop">
+      <div class="railtabs">
+        <div class="rtab on" data-t="flow" onclick="railTab('flow')">📍 流程</div>
+        <div class="rtab" data-t="ai" onclick="railTab('ai')">🤖 AI 助手</div>
+      </div>
+      <span class="railfold" id="railfoldbtn" onclick="railFold()" title="收起 / 展开">▶</span>
+    </div>
+    <div class="railbody" id="rail-flow"></div>
+    <div class="railbody" id="rail-ai" style="display:none"></div>
+  </aside>
 </div>
 
 <!-- 记一笔弹窗 -->
@@ -668,7 +712,7 @@ const DEFAULT={
  uploads:{floor:['floor.jpeg'],site:[],render:['效果图-客厅-1K.jpg']},
  renderLinks:[{u:'漫游视频-720P.mp4',d:'2026/8/16'}],
  photos:[],
- need:{}
+ need:{}, chat:[]
 };
 let S=load();
 function load(){
@@ -687,7 +731,8 @@ function todayISO(){return new Date().toISOString().slice(0,10)}
 /* ================= 导航 / 通用 ================= */
 document.querySelectorAll('.nav').forEach(n=>n.onclick=()=>go(n.dataset.p));
 function go(p){document.querySelectorAll('.nav').forEach(x=>x.classList.toggle('on',x.dataset.p===p));
-document.querySelectorAll('.page').forEach(x=>x.classList.toggle('on',x.id==='p-'+p));window.scrollTo(0,0)}
+document.querySelectorAll('.page').forEach(x=>x.classList.toggle('on',x.id==='p-'+p));window.scrollTo(0,0);
+ railCur=p;try{renderFlow()}catch(e){}}
 let tt;function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('show'),2600)}
 function pickImg(cb){const f=document.getElementById('filepick');f.onchange=()=>{const file=f.files[0];if(!file)return;
  const r=new FileReader();r.onload=e=>{ // 压缩到最长边 900px 再存,避免撑爆 localStorage
@@ -699,7 +744,8 @@ function esc(s){return (s||'').replace(/</g,'&lt;')}
 /* ================= 首页 ================= */
 function renderHome(){
  const P=S.project||DEFAULT.project;
- document.getElementById('proj-meta').textContent=P.name+' ✎';
+ document.getElementById('proj-meta').textContent=P.name;
+ renderMetaBar();
  document.getElementById('proj-stage').textContent=P.stage;
  document.getElementById('proj-budget').textContent=(P.budget/1e4).toFixed(1);
  const spent=S.expenses.reduce((a,e)=>a+e.amt,0);
@@ -822,26 +868,8 @@ function updProj(k,v){
  else if(v)P[k]=v;
  P.name=P.city+' · '+P.area+'m² · '+P.layout+(P.facing?' · '+P.facing:'')+' · '+P.mode+'模式';
  save();
- document.getElementById('proj-meta').textContent=P.name+' ✎';
- try{renderHome();renderBudget()}catch(e){}
+ try{renderHome();renderBudget();renderFlow()}catch(e){}
 }
-function toggleProjEdit(){
- const el=document.getElementById('proj-edit'),P=projF();
- if(el.style.display==='none'){
-  document.getElementById('pe-city').value=P.city;
-  document.getElementById('pe-area').value=P.area;
-  document.getElementById('pe-layout').value=P.layout;
-  document.getElementById('pe-facing').value=P.facing||'待确认';
-  document.getElementById('pe-height').value=P.height||'';
-  document.getElementById('pe-floor').value=P.floor||'';
-  document.getElementById('pe-lift').value=P.lift||'待确认';
-  document.getElementById('pe-year').value=P.year||'';
-  document.getElementById('pe-mode').value=P.mode;
-  document.getElementById('pe-budget').value=P.budget/1e4;
-  el.style.display='block';
- }else el.style.display='none';
-}
-
 const NSTAGE=['基本信息（房+人）','生活场景与动线','空间需求','风格与审美','预算','优先级与特殊需求'];
 const NEED=[
  {k:'house',s:0,t:'① 房屋信息',q:'房子的基本情况？',type:'multi',opts:['新房毛坯','二手房翻新','局部改造','精装房改造','老房(房龄15年+)','顶楼/一楼','有物业改造限制'],extra:'补充(城市/楼层/朝向/层高/房龄)'},
@@ -871,17 +899,17 @@ function renderNeed(){
   ${d.k==='house'?(()=>{const P=projF();return `<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;background:var(--bg);border-radius:10px;padding:8px 12px;font-size:13px">
     <span class="muted" style="font-size:12px">↳ 同步项目档案：</span>
     城市 <input class="cell" style="width:70px" value="${esc(P.city)}" onchange="updProj('city',this.value)">
-    面积 <input class="cell" type="number" style="width:60px" value="${P.area}" onchange="updProj('area',this.value)"> ㎡<span class="qhelp" onclick="showHelp('area')">❓不知道?</span>
+    面积 <input class="cell" type="number" style="width:60px" value="${P.area}" onchange="updProj('area',this.value)"> ㎡<span class="qmark" onclick="railHelp('area')" title="房子面积不知道去哪查？点我">*</span>
     户型 <input class="cell" style="width:90px" value="${esc(P.layout)}" onchange="updProj('layout',this.value)">
-    朝向 <select class="cell" onchange="updProj('facing',this.value)">${['待确认','南北通透','东西通透','朝南','朝北','朝东','朝西'].map(o=>`<option ${o===(P.facing||'待确认')?'selected':''}>${o}</option>`).join('')}</select><span class="qhelp" onclick="showHelp('facing')">❓怎么看?</span>
-    层高 <input class="cell" type="number" step="0.01" style="width:60px" placeholder="如2.75" value="${P.height||''}" onchange="updProj('height',this.value)"> m<span class="qhelp" onclick="showHelp('height')">❓怎么量?</span>
+    朝向 <select class="cell" onchange="updProj('facing',this.value)">${['待确认','南北通透','东西通透','朝南','朝北','朝东','朝西'].map(o=>`<option ${o===(P.facing||'待确认')?'selected':''}>${o}</option>`).join('')}</select><span class="qmark" onclick="railHelp('facing')" title="朝向怎么看？点我">*</span>
+    层高 <input class="cell" type="number" step="0.01" style="width:60px" placeholder="如2.75" value="${P.height||''}" onchange="updProj('height',this.value)"> m<span class="qmark" onclick="railHelp('height')" title="层高怎么量？点我">*</span>
     楼层 <input class="cell" type="number" style="width:48px" placeholder="如6" value="${P.floor||''}" onchange="updProj('floor',this.value)"> 层
     电梯 <select class="cell" onchange="updProj('lift',this.value)">${['待确认','有','无'].map(o=>`<option ${o===(P.lift||'待确认')?'selected':''}>${o}</option>`).join('')}</select>
-    建成年份 <input class="cell" type="number" style="width:64px" placeholder="如2008" value="${P.year||''}" onchange="updProj('year',this.value)"><span class="qhelp" onclick="showHelp('age')">❓哪里查?</span>
+    建成年份 <input class="cell" type="number" style="width:64px" placeholder="如2008" value="${P.year||''}" onchange="updProj('year',this.value)"><span class="qmark" onclick="railHelp('age')" title="建成年份哪里查？点我">*</span>
    </div>`})():''}
   ${d.k==='budget'?(()=>{const P=projF();return `<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;background:var(--bg);border-radius:10px;padding:8px 12px;font-size:13px">
     <span class="muted" style="font-size:12px">↳ 同步项目档案：</span>
-    总预算 <input class="cell" type="number" style="width:70px" value="${P.budget/1e4}" onchange="updProj('budget',this.value)"> 万<span class="qhelp" onclick="showHelp('budget')">❓怎么定?</span>
+    总预算 <input class="cell" type="number" style="width:70px" value="${P.budget/1e4}" onchange="updProj('budget',this.value)"> 万<span class="qmark" onclick="railHelp('budget')" title="预算怎么定？点我">*</span>
     <span class="muted" style="font-size:12px">（写这里会联动总览页与预算把控的类目基数）</span>
    </div>`})():''}
   <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;gap:10px">
@@ -1354,19 +1382,7 @@ const HELPLIB={
   ['初判参考','墙厚≥200mm、敲起来是实心闷响的多为承重墙（仅参考，不能作为拆改依据）'],
   ['拿不准 = 不动','承重墙、配重墙、燃气管道是全流程唯一不可逆红线']],
   ai:'把户型图发 AI 标注疑似承重墙做参考，但拆改必须以物业书面指认为准。'}};
-function showHelp(k){
- const h=HELPLIB[k];if(!h)return;
- let ov=document.getElementById('helpov');
- if(!ov){ov=document.createElement('div');ov.id='helpov';
-  ov.style.cssText='position:fixed;inset:0;background:rgba(43,41,38,.45);z-index:99;display:none;align-items:center;justify-content:center;padding:20px';
-  ov.onclick=e=>{if(e.target===ov)ov.style.display='none'};document.body.appendChild(ov)}
- ov.innerHTML=`<div style="background:#fff;border-radius:14px;max-width:540px;width:100%;padding:22px;max-height:82vh;overflow:auto">
-  <h3 style="margin-bottom:2px">❓ ${h.q}</h3><p class="muted" style="font-size:12px;margin-bottom:8px">按从省事到费事排序，任选一条走得通的就行</p>
-  ${h.ways.map((w,i)=>`<div style="display:flex;gap:10px;padding:9px 0;border-bottom:1px dashed var(--line);font-size:13px"><b style="color:var(--brand)">${i+1}</b><div><b>${w[0]}</b><div class="muted" style="font-size:12px;margin-top:2px">${w[1]}</div></div></div>`).join('')}
-  ${h.ai?`<div class="aibox" style="margin-top:12px;font-size:12.5px">🤖 ${h.ai}</div>`:''}
-  <button class="btn sm ghost" style="margin-top:12px" onclick="document.getElementById('helpov').style.display='none'">知道了</button></div>`;
- ov.style.display='flex';
-}
+function showHelp(k){railHelp(k)} // 旧模态已废弃：改为把右侧常驻栏钉到该话题
 
 /* ================= 场景需求库 ================= */
 const SCENES=[
@@ -1395,11 +1411,329 @@ function toggleScene(k){
  save();renderScenes();needProg();
 }
 
+
+/* ================= 右侧常驻栏：流程树 + AI 助手 ================= */
+let railCur='home', railTabCur='flow', railOpenGrp={};
+function railTab(t){railTabCur=t;
+ document.querySelectorAll('.rtab').forEach(x=>x.classList.toggle('on',x.dataset.t===t));
+ document.getElementById('rail-flow').style.display=t==='flow'?'block':'none';
+ document.getElementById('rail-ai').style.display=t==='ai'?'block':'none';
+ document.getElementById('rail').classList.remove('fold');
+ document.getElementById('railfoldbtn').textContent='▶';
+ if(t==='ai')renderAIRail(); else renderFlow();}
+function railFold(){const r=document.getElementById('rail'),f=r.classList.toggle('fold');
+ document.getElementById('railfoldbtn').textContent=f?'◀':'▶';}
+function toggleTech(){const on=document.body.classList.toggle('hidetech');
+ try{localStorage.setItem('renomate_hidetech',on?'1':'0')}catch(e){}
+ document.getElementById('techtog').textContent=(on?'☐':'☑')+' 显示技术标注';}
+
+/* ---- 流程树：每步「需要你提供」的东西 ---- */
+const FLOW=[
+ {g:'第 0 步 · 拿房',items:[
+  {p:'inspect',n:'收房验房',prog:()=>[(S.inspect||[]).filter(c=>c.d).length,(S.inspect||[]).length],
+   need:[['验房问题清单（拍照存证）',()=>(S.inspIssues||[]).length>0]]}]},
+ {g:'装修前 · 设计链路',items:[
+  {p:'know',n:'装修知识',need:[]},
+  {p:'need',n:'需求梳理',prog:()=>[NEED.filter(n=>S.need[n.k]&&(S.need[n.k].sel.length||S.need[n.k].extra)).length,NEED.length],
+   need:[['房子面积',()=>!!projF().area],['朝向',()=>!!projF().facing],['层高',()=>!!projF().height],
+         ['建成年份',()=>!!projF().year],['总预算',()=>!!projF().budget]]},
+  {p:'design',n:'量房与方案',prog:()=>[S.planChecks.filter(c=>c.done).length,S.planChecks.length],
+   need:[['户型图',()=>S.uploads.floor.length>0],['现场照片',()=>S.uploads.site.length>0]]},
+  {p:'render',n:'效果图 / 3D',
+   need:[['效果图已归档',()=>S.uploads.render.length>0],['方案签字确认',()=>!!S.planConfirmed]]},
+  {p:'cd',n:'施工图',prog:()=>[S.cd.filter(c=>c.d).length,S.cd.length],need:[]},
+  {p:'contract',n:'合同管理',prog:()=>[S.ct.filter(c=>c.d).length,S.ct.length],
+   need:[['设计合同 / 施工合同原件',()=>S.ct.filter(c=>c.d).length>0]]}]},
+ {g:'装修中 · 工作台',items:[
+  {p:'track',n:'施工追踪',prog:()=>{const a=S.tasks.flatMap((st,i)=>st.items.map((_,j)=>S.taskDone[i+'-'+j]));return[a.filter(Boolean).length,a.length]},need:[]},
+  {p:'budget',n:'预算把控',need:[['每笔支出随手记账',()=>S.expenses.length>0]]},
+  {p:'buy',n:'采购清单',prog:()=>{const a=[...S.buy.zc,...S.buy.jd,...S.buy.rz];return[a.filter(x=>x.s>=2).length,a.length]},need:[]},
+  {p:'mat',n:'选材建议',need:[]},
+  {p:'accept',n:'验收中心',need:[['逐项现场验收打勾',()=>Object.values(S.acceptDone||{}).filter(Boolean).length>0]]},
+  {p:'photo',n:'现场图库',need:[['关键节点照片存档',()=>(S.photos||[]).length>0]]}]},
+ {g:'装修后 · 入住保修',items:[
+  {p:'movein',n:'入住与保修',prog:()=>[(S.movein||[]).filter(c=>c.d).length,(S.movein||[]).length],need:[]}]}
+];
+function railToggleGrp(g){railOpenGrp[g]=railOpenGrp[g]===false?true:false;renderFlow()}
+function safe(f,d){try{const v=f();return v===undefined?d:v}catch(e){return d}}
+function renderFlow(){
+ const el=document.getElementById('rail-flow');if(!el)return;
+ // 「你现在这一步」= 第一个还没完成的节点。总览页停留时也能回答「我走到哪了」
+ let curP=null;
+ for(const g of FLOW){for(const it of g.items){
+   const pr=it.prog?safe(it.prog,null):null;const nd=it.need||[];
+   const dn=pr?(pr[1]>0&&pr[0]>=pr[1]):(nd.length?nd.every(n=>safe(n[1],false)):false);
+   if(!dn){curP=it.p;break}} if(curP)break}
+ let h='<div style="font-size:11.5px;color:var(--sub);margin-bottom:6px;line-height:1.6">按真实时间顺序。<b style="color:var(--brand)">◉</b> 是你现在这步；每步下面的「↳」是<b style="color:var(--ink)">这一步需要你提供</b>的东西。</div>';
+ FLOW.forEach(g=>{
+  const open=railOpenGrp[g.g]!==false; // 默认全展开，用户可点标题折叠
+  h+='<div class="tgrp" onclick="railToggleGrp(\''+g.g+'\')">'+(open?'▾':'▸')+' '+g.g+'</div>';
+  if(!open)return;
+  g.items.forEach(it=>{
+   const pr=it.prog?safe(it.prog,null):null;
+   const needs=it.need||[];
+   const allNeed=needs.length?needs.every(n=>safe(n[1],false)):false;
+   const done=pr?(pr[1]>0&&pr[0]>=pr[1]):allNeed;
+   const isCur=it.p===railCur;       // 你正在看的页
+   const isNow=it.p===curP;           // 你实际该做的这一步
+   h+='<div class="tnode '+(isCur?'cur':'')+'" onclick="go(\''+it.p+'\')" title="'+(isNow?'你现在该做这一步':'')+'">'
+    +'<div class="tdot '+(done?'done':'')+' '+(isNow&&!done?'cur':'')+'">'+(done?'✓':(isNow?'◉':''))+'</div>'
+    +'<div style="flex:1;min-width:0"><b style="font-weight:'+(isCur?600:400)+'">'+it.n+'</b>'
+    +(pr?' <span class="muted" style="font-size:11px">'+pr[0]+'/'+pr[1]+'</span>':'')+'</div></div>';
+   needs.forEach(n=>{const ok=safe(n[1],false);
+    h+='<div class="tneed '+(ok?'ok':'')+'">'+(ok?'✓ ':'↳ ')+n[0]+(ok?'':' <span style="color:var(--red)">待提供</span>')+'</div>'});
+  });
+ });
+ el.innerHTML=h;
+}
+/* ---- 总览只读摘要条 ---- */
+function renderMetaBar(){
+ const el=document.getElementById('proj-meta-bar');if(!el)return;
+ const P=projF();
+ const F=[['城市',P.city,''],['面积',P.area?P.area+' ㎡':'','area'],['户型',P.layout,''],
+  ['朝向',P.facing,'facing'],['层高',P.height?P.height+' m':'','height'],
+  ['楼层',P.floor?P.floor+' 层':'',''],['电梯',P.lift,''],['建成',P.year?P.year+' 年':'','age'],
+  ['模式',P.mode,''],['总预算',P.budget?(P.budget/1e4).toFixed(0)+' 万':'','budget']];
+ const missing=F.filter(f=>!f[1]).length;
+ const cells=F.map(f=>{
+  const val=f[1]?'<b>'+esc(String(f[1]))+'</b>'
+   :'<span class="miss" onclick="railHelp(\''+(f[2]||'area')+'\')">待确认'+(f[2]?'<span class="qmark">*</span>':'')+'</span>';
+  return '<span class="mi"><span class="muted">'+f[0]+'</span> '+val+'</span>';
+ }).join('');
+ const btn='<span style="margin-left:auto;white-space:nowrap"><button class="btn sm ghost" onclick="go(\'need\');needIdx=0;renderNeed()">'
+  +(missing?'⚠️ '+missing+' 项待确认 · 去补全 →':'✎ 去需求梳理修改 →')+'</button></span>';
+ el.innerHTML=cells+btn;
+}
+/* ---- 红色 * → 把右侧栏钉到这个话题 ---- */
+const FIELDLABEL={area:'面积',facing:'朝向',height:'层高',age:'建成年份',budget:'总预算',floorplan:'户型图',bearing:'承重墙'};
+let railTopic=null;
+function railHelp(k){railTopic=k;railTab('ai');renderAIRail();
+ const b=document.getElementById('rail-ai');if(b)b.scrollTop=0}
+
+/* ================= AI 助手（真实调用 Claude Messages API · BYOK） =================
+   为什么要用户自己填 key：本站是 GitHub Pages 纯静态页，任何写进 index.html 的 key
+   都能被访问者从源码里读走。官方为浏览器直连提供了 anthropic-dangerous-direct-browser-access
+   头，配套的正当用法就是 BYOK —— key 只存在使用者本机 localStorage，不经过我们任何服务器。 */
+const KEYLS='renomate_anthropic_key';
+const AIMODEL='claude-opus-5';
+function aiKey(){try{return localStorage.getItem(KEYLS)||''}catch(e){return''}}
+function saveKey(){
+ const v=(document.getElementById('aikey').value||'').trim();
+ if(!v)return toast('先粘贴 key');
+ if(!v.startsWith('sk-ant-'))return toast('这不像 Anthropic 的 key（应以 sk-ant- 开头）');
+ try{localStorage.setItem(KEYLS,v)}catch(e){return toast('本机存储失败')}
+ toast('✅ 已保存在本机浏览器');renderAIRail();
+}
+function clearKey(){if(confirm('从本机删除已保存的 API Key？')){localStorage.removeItem(KEYLS);renderAIRail()}}
+
+async function anthropic(messages,system,opts){
+ opts=opts||{};
+ const key=aiKey();
+ if(!key)throw new Error('还没填 API Key');
+ const body={model:AIMODEL,max_tokens:opts.max||8000,system:system,messages:messages};
+ if(opts.schema)body.output_config={format:{type:'json_schema',schema:opts.schema}};
+ let r;
+ try{
+  r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',
+   headers:{'content-type':'application/json','x-api-key':key,
+    'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+   body:JSON.stringify(body)});
+ }catch(e){throw new Error('网络请求失败（可能是断网或被浏览器插件拦截）：'+e.message)}
+ let j;try{j=await r.json()}catch(e){throw new Error('HTTP '+r.status+'，返回不是 JSON')}
+ if(!r.ok){
+  const m=(j.error&&j.error.message)||('HTTP '+r.status);
+  if(r.status===401)throw new Error('Key 无效或已撤销（401）。点下方「换 key」重填。');
+  if(r.status===429)throw new Error('触发频率/额度限制（429），过一会儿再试。');
+  throw new Error(m);
+ }
+ if(j.stop_reason==='refusal')throw new Error('模型拒绝了这个请求，换个问法试试。');
+ const txt=(j.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('\n').trim();
+ if(!txt)throw new Error('返回为空（stop_reason='+j.stop_reason+'）');
+ return txt;
+}
+function aiSys(){
+ const P=projF();
+ return '你是「装修 AI 管家」里的助手，服务对象是第一次装修、不懂行的中国业主，不是设计师同行。\n'
+ +'当前项目：'+P.city+'｜'+P.area+'㎡｜'+P.layout+'｜朝向'+(P.facing||'待确认')
+ +'｜层高'+(P.height||'待确认')+'m｜'+(P.floor?P.floor+'层':'楼层待确认')+'｜电梯'+(P.lift||'待确认')
+ +'｜建成'+(P.year||'待确认')+'｜'+P.mode+'模式｜总预算'+(P.budget/1e4).toFixed(1)+'万。\n'
+ +'规则：\n'
+ +'1. 用大白话，少用行业黑话；非用术语不可时先一句话解释。\n'
+ +'2. 控制在 300 字以内，能列点就列点，不要写小作文。\n'
+ +'3. 涉及钱和尺寸要给具体数字区间，并说明这是哪个城市、哪个档次的口径。\n'
+ +'4. 上面标「待确认」的信息不要替业主假设——需要用到时，直接告诉他去哪查。\n'
+ +'5. 承重墙、燃气管道、防水、封窗这类不可逆的事，必须提示以物业书面指认或国标为准。\n'
+ +'6. 不确定就说不确定，绝不编数字、编标准号、编品牌。';
+}
+function aiHist(){
+ const src=(S.chat||[]).slice(0,-2).filter(m=>m.r==='u'||m.r==='a');
+ const h=[];
+ src.forEach(m=>{const role=m.r==='u'?'user':'assistant';
+  if(h.length&&h[h.length-1].role===role)h[h.length-1].content=m.t;else h.push({role:role,content:m.t})});
+ let out=h.slice(-8);
+ while(out.length&&out[0].role!=='user')out.shift();
+ return out;
+}
+let aiImg=null;
+function aiPickPhoto(){pickImg(d=>{aiImg=d;renderAIRail()})}
+function aiDropPhoto(){aiImg=null;renderAIRail()}
+
+async function aiSend(preset){
+ const inp=document.getElementById('aiq');
+ const q=preset||((inp&&inp.value)||'').trim();
+ if(!q&&!aiImg)return toast('先输入问题，或点 📷 传张图');
+ if(!aiKey()){toast('先填一次 API Key');return renderAIRail()}
+ S.chat=S.chat||[];
+ S.chat.push({r:'u',t:q||'（一张图）',img:aiImg||''});
+ S.chat.push({r:'a',t:'思考中…'});
+ const content=[];
+ if(aiImg)content.push({type:'image',source:{type:'base64',media_type:'image/jpeg',data:aiImg.split(',')[1]}});
+ content.push({type:'text',text:q||'这张图跟我家装修有什么关系？有什么要注意的？'});
+ aiImg=null;if(inp)inp.value='';
+ renderAIRail();
+ try{
+  const t=await anthropic(aiHist().concat([{role:'user',content:content}]),aiSys(),{max:8000});
+  S.chat[S.chat.length-1]={r:'a',t:t};
+ }catch(e){S.chat[S.chat.length-1]={r:'sys',t:'⚠️ 调用失败：'+e.message}}
+ save();renderAIRail();
+}
+
+/* ---- 拍照读档案：房产证 / 户型图 → 结构化字段 → 回填 ---- */
+const DOCSCHEMA={type:'object',additionalProperties:false,
+ required:['docType','area','layout','facing','year','height','note'],
+ properties:{
+  docType:{type:'string',description:'这张图是什么：房产证/不动产权证、购房合同、户型图、宣传页、其他'},
+  area:{type:['number','null'],description:'建筑面积，单位㎡。只有图上明确写了才填，读不出或需要推算一律填 null'},
+  layout:{type:['string','null'],description:'户型，如「三室两厅」。读不出填 null'},
+  facing:{type:['string','null'],enum:['南北通透','东西通透','朝南','朝北','朝东','朝西',null],description:'朝向。必须依据图上的指北针或明确文字，不得靠猜；读不出填 null'},
+  year:{type:['integer','null'],description:'建成/竣工年份，4 位数字。登记日期不等于建成年份，别混。读不出填 null'},
+  height:{type:['number','null'],description:'层高，单位米。读不出填 null'},
+  note:{type:'string',description:'两三句话：分别从图上哪个位置读到了什么；哪些字段读不出、建议业主去哪查。说人话。'}}};
+let aiDocResult=null;
+async function aiReadDoc(){
+ if(!aiImg)return toast('先拍照或选一张图');
+ if(!aiKey()){toast('先填一次 API Key');return renderAIRail()}
+ const img=aiImg;aiImg=null;
+ S.chat=S.chat||[];
+ S.chat.push({r:'u',t:'📷 读一下这张图里的房屋信息',img:img});
+ S.chat.push({r:'a',t:'正在读图…'});renderAIRail();
+ try{
+  const txt=await anthropic([{role:'user',content:[
+    {type:'image',source:{type:'base64',media_type:'image/jpeg',data:img.split(',')[1]}},
+    {type:'text',text:'这是中国业主提供的房屋材料照片。请只读出图上真实写着的信息，读不出的字段一律填 null——宁可空着也不要推算或猜测，因为这些数字会直接用于装修预算和方案。'}]}],
+   '你在帮不懂行的业主从房产证/购房合同/户型图里提取房屋基础信息。严格只提取图上可见的内容，不做任何推算。',
+   {schema:DOCSCHEMA,max:4000});
+  const d=JSON.parse(txt);aiDocResult=d;
+  const got=[];
+  if(d.area!=null)got.push('面积 '+d.area+'㎡');
+  if(d.layout)got.push('户型 '+d.layout);
+  if(d.facing)got.push('朝向 '+d.facing);
+  if(d.year!=null)got.push('建成 '+d.year+'年');
+  if(d.height!=null)got.push('层高 '+d.height+'m');
+  S.chat[S.chat.length-1]={r:'a',t:'📄 判断这是：'+d.docType+'\n\n'
+   +(got.length?'读到：'+got.join('　')+'\n\n':'这张图上没读到可用的房屋字段。\n\n')+d.note,fill:got.length?1:0};
+ }catch(e){S.chat[S.chat.length-1]={r:'sys',t:'⚠️ 读图失败：'+e.message};aiDocResult=null}
+ save();renderAIRail();
+}
+function aiApplyDoc(){
+ const d=aiDocResult;if(!d)return toast('没有可回填的结果');
+ const done=[];
+ if(d.area!=null){updProj('area',d.area);done.push('面积')}
+ if(d.layout){updProj('layout',d.layout);done.push('户型')}
+ if(d.facing){updProj('facing',d.facing);done.push('朝向')}
+ if(d.year!=null){updProj('year',d.year);done.push('建成年份')}
+ if(d.height!=null){updProj('height',d.height);done.push('层高')}
+ if(!done.length)return toast('这次没读到可填的字段');
+ S.chat.push({r:'sys',t:'✅ 已填入项目档案：'+done.join('、')
+  +'\n\n⚠️ 这是 AI 读图结果，请你自己核一眼原件再当准数用——面积和层高错了，预算和吊顶方案会跟着错。'});
+ aiDocResult=null;save();renderAIRail();
+ try{renderHome();renderNeed()}catch(e){}
+}
+
+/* ---- AI 助手面板渲染（含「去哪查」话题区） ---- */
+const TOPICFILL={area:'面积',facing:'朝向',height:'层高',age:'建成年份',budget:'总预算'};
+function renderAIRail(){
+ const el=document.getElementById('rail-ai');if(!el)return;
+ const key=aiKey();
+ let h='';
+ /* 1. 话题区：点红色 * 进来时，先给「去哪查」的几条路 */
+ if(railTopic&&HELPLIB[railTopic]){
+  const t=HELPLIB[railTopic];
+  h+='<div style="border:1px solid var(--line);border-radius:10px;padding:11px;margin-bottom:10px">'
+   +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:6px">'
+   +'<b style="font-size:13px">'+t.q+'</b>'
+   +'<span style="cursor:pointer;color:var(--sub);font-size:15px;line-height:1" onclick="railTopic=null;renderAIRail()" title="关闭">×</span></div>'
+   +'<div class="muted" style="font-size:11px;margin:2px 0 7px">按从省事到费事排序，任选一条走得通的就行</div>'
+   +t.ways.map((w,i)=>'<div style="display:flex;gap:7px;padding:5px 0;border-bottom:1px dashed var(--line);font-size:12px">'
+     +'<b style="color:var(--brand)">'+(i+1)+'</b><div><b>'+w[0]+'</b>'
+     +'<div class="muted" style="font-size:11.5px;margin-top:1px">'+w[1]+'</div></div></div>').join('')
+   +(t.ai?'<div style="background:var(--purple-soft);border-radius:8px;padding:8px;margin-top:8px;font-size:11.5px">🤖 '+t.ai+'</div>':'')
+   +'<button class="btn sm" style="margin-top:8px;width:100%" onclick="aiPickPhoto()">📷 拍照 / 选图，让 AI 帮我读出来</button>'
+   +(TOPICFILL[railTopic]?'<button class="btn sm ghost" style="margin-top:6px;width:100%" onclick="aiSend(\''+t.q+'我家是'+esc(projF().city)+esc(String(projF().area))+'㎡，具体该怎么办？\')">💬 直接问 AI 我该怎么办</button>':'')
+   +'</div>';
+ }
+ /* 2. 没填 key 的引导 */
+ if(!key){
+  h+='<div class="msg sys">🔑 <b>第一次用，先填一次 API Key</b>'
+   +'<div style="margin:5px 0">key 只存在你这台电脑的浏览器里，<b>不会上传到我们任何服务器</b>——因为这个站根本没有服务器。</div>'
+   +'<input class="cell" id="aikey" style="width:100%;margin:5px 0" placeholder="sk-ant-..." autocomplete="off">'
+   +'<button class="btn sm" onclick="saveKey()">保存并启用</button>'
+   +'<div style="margin-top:6px;color:var(--sub);line-height:1.6">去 <a href="https://console.anthropic.com/settings/keys" target="_blank" style="color:var(--brand)">console.anthropic.com</a> 建一个。<br>'
+   +'<b>为什么不是我们直接提供：</b>这站是 GitHub Pages 静态页，把我们的 key 写进代码，任何人按 F12 就能拿走盗刷。这是行业通行的 BYOK 做法。</div></div>';
+ }
+ /* 3. 对话记录 */
+ const chat=S.chat||[];
+ h+='<div id="ai-log">';
+ if(!chat.length){
+  h+='<div class="msg a">你好，我是装修 AI 助手 👋\n\n我知道你家的情况（'+esc(projF().name)+'），所以可以：\n'
+   +'· 直接问任何装修问题，我按你家的面积预算回答\n'
+   +'· 点 📷 把房产证 / 户型图拍照发我，我读出面积、户型、朝向，一键填进项目档案\n'
+   +'· 页面上任何红色 <span class="qmark">*</span> 点一下，我告诉你那一项去哪查</div>';
+ }else{
+  h+=chat.map((m,i)=>{
+   let b='<div class="msg '+m.r+'">'+esc(m.t)
+    +(m.img?'<img src="'+m.img+'">':'');
+   if(m.fill&&i===chat.length-1&&aiDocResult)
+    b+='<button class="btn sm" style="margin-top:8px;width:100%" onclick="aiApplyDoc()">✅ 填进项目档案（填完请自己核一眼原件）</button>';
+   return b+'</div>';
+  }).join('');
+ }
+ h+='</div>';
+ /* 4. 待发送的图 */
+ if(aiImg){
+  h+='<div class="msg sys">📷 已附一张图<img src="'+aiImg+'">'
+   +'<div style="display:flex;gap:6px;margin-top:7px">'
+   +'<button class="btn sm" style="flex:1" onclick="aiReadDoc()">读出房屋信息</button>'
+   +'<button class="btn sm gray" onclick="aiDropPhoto()">取消</button></div>'
+   +'<div style="margin-top:5px;color:var(--sub)">也可以直接在下面写问题一起发出去。</div></div>';
+ }
+ /* 5. 输入区 */
+ h+='<div style="display:flex;gap:5px;margin-top:8px;align-items:center">'
+  +'<button class="btn sm ghost" style="padding:8px 10px" onclick="aiPickPhoto()" title="拍照 / 选图">📷</button>'
+  +'<input class="cell" id="aiq" style="flex:1;min-width:0" placeholder="问我任何装修问题…" onkeydown="if(event.key===\'Enter\')aiSend()">'
+  +'<button class="btn sm" onclick="aiSend()">发送</button></div>';
+ if(key)h+='<div style="margin-top:6px;font-size:11px;color:var(--sub)">真实调用 '+AIMODEL+' · 计费走你自己的 Anthropic 账号 · '
+  +'<span style="cursor:pointer;text-decoration:underline" onclick="clearKey()">换 key</span>'
+  +(chat.length?' · <span style="cursor:pointer;text-decoration:underline" onclick="if(confirm(\'清空对话记录？\')){S.chat=[];save();renderAIRail()}">清空对话</span>':'')+'</div>';
+ el.innerHTML=h;
+ const lg=document.getElementById('ai-log');if(lg)lg.scrollTop=lg.scrollHeight;
+ el.scrollTop=el.scrollHeight;
+}
+
 /* ================= 初始化 ================= */
 [renderHome,renderKnow,renderKQ,renderNeed,renderUploads,renderPlanChecks,renderPlans,renderLinks,renderAI,
  renderCD,renderContract,renderTrack,renderBudget,renderBuy,renderMat,renderAccept,renderPhotos,
- renderInspect,renderMovein,renderScenes,renderGuides]
+ renderInspect,renderMovein,renderScenes,renderGuides,renderMetaBar,renderFlow,renderAIRail]
  .forEach(f=>{try{f()}catch(e){console.error(f.name,e);toast('⚠️ 模块 '+f.name+' 渲染出错：'+e.message)}});
+// 窄屏（<1180px）右栏是浮层，会盖住正文 —— 默认收起，用户点 ◀ 再展开
+(function(){if(window.innerWidth<1180){const r=document.getElementById('rail');
+ if(r){r.classList.add('fold');document.getElementById('railfoldbtn').textContent='◀'}}})();
+// 技术标注（代码/AI/人 三色标签）默认对终端用户隐藏，演示时可在左下角打开
+(function(){let v='1';try{v=localStorage.getItem('renomate_hidetech')}catch(e){}
+ if(v===null||v===undefined)v='1';
+ if(v==='1')document.body.classList.add('hidetech');
+ const t=document.getElementById('techtog');
+ if(t)t.textContent=(v==='1'?'☐':'☑')+' 显示技术标注';})();
 </script>
 </body>
 </html>
